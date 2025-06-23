@@ -1,0 +1,71 @@
+
+name: 🔍 PR Quality Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          if [ -f "package.json" ]; then
+            npm ci
+          elif [ -f "frontend/package.json" ]; then
+            cd frontend && npm ci
+          fi
+
+      - name: Run linting
+        run: |
+          if [ -f "package.json" ]; then
+            npm run lint
+          elif [ -f "frontend/package.json" ]; then
+            cd frontend && npm run lint
+          fi
+
+      - name: Run tests
+        run: |
+          if [ -f "package.json" ]; then
+            npm test
+          elif [ -f "frontend/package.json" ]; then
+            cd frontend && npm test
+          fi
+
+      - name: Check build
+        run: |
+          if [ -f "package.json" ]; then
+            npm run build
+          elif [ -f "frontend/package.json" ]; then
+            cd frontend && npm run build
+          fi
+
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run security audit
+        run: |
+          if [ -f "package.json" ]; then
+            npm audit --audit-level high
+          fi
+
+  size-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check bundle size
+        uses: andresz1/size-limit-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}

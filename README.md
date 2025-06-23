@@ -1,94 +1,86 @@
-# 🎓 家教媒合平台 (Tutor Matching Platform)
 
-線下家教媒合平台，整合會員系統、課程瀏覽、購物車功能與後台管理系統。
+# 家教媒合平台 (Tutor Matching Platform)
 
-## 📋 功能特色
+> 線下家教媒合平台 - 整合家教媒合、老師評價、課程瀏覽功能
 
-### 🔐 會員功能
+[![Github Repository](https://img.shields.io/github/repo-size/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform)[![GitHub Issues](https://img.shields.io/github/issues/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform/stargazers)
 
-- 用戶註冊與基本資料管理
-- 登入/登出系統
-- 訂單查詢功能
+## 專案概述
 
-### 🛍️ 商品瀏覽與購物
+**時程**: 2025/6/26 確認團隊 → 7/1 開發開始 → 8/15 預計完成  
+**部署**: fs101.coded2.fun  
 
-- 家教課程主頁展示
-- 智能搜尋功能
-- 購物車管理
+## 成員
 
-### 💳 結帳系統
+**PM**: [Cody](https://github.com/TobyWuNumOne)</br>
+**Member**[Shen](https://github.com/Shen880421)</br>
+**Member**[Alex](https://github.com/alexlin1127)</br>
+**Member**[Stanley](https://github.com/)</br>
 
-- 自動訂單編號生成
-- 智能帳單計算
-- 第三方金流串接
+## 核心功能
 
-### ⚙️ 後台管理
+- 🔐 **會員系統** - 註冊登入、個人資料、權限控制
+- 🛍️ **家教媒合** - 老師瀏覽、課程搜尋、智能推薦
+- ⭐ **評價系統** - 老師評分、課程回饋、數據分析
+- 💳 **交易系統** - 訂單管理、金流整合、交易記錄
+- ⚙️ **後台管理** - 管理介面、統計儀表板、系統設定
 
-- 管理者權限控制
-- 完整 CRUD 操作
-- 數據分析儀表板
+## 技術棧 (討論中)
 
-## 🛠 技術棧
+**前端**: React.js / Vue.js + TypeScript  
+**後端**: Node.js / Python + 資料庫  
+**工具**: GitHub Actions + Docker + ESLint
 
-### 前端
-
-- [ ] 待確認 (React/Vue/Angular)
-- [ ] CSS Framework 待選
-
-### 後端
-
-- [ ] 待確認 (Node.js/Python/Java)
-- [ ] 資料庫待選 (MySQL/PostgreSQL/MongoDB)
-
-### 部署
-
-- 目標主機: `fs101.coded2.fun`
-- CI/CD: GitHub Actions
-
-## 🚀 快速開始
+## 快速開始
 
 ```bash
-# Clone 專案
+# 1. Clone 專案
 git clone https://github.com/TobyWuNumOne/tutor-matching-platform.git
 cd tutor-matching-platform
 
-# 安裝依賴 (待技術棧確認後更新)
-# npm install 或其他指令
+# 2. 查看開發指南
+cat docs/development/GETTING_STARTED.md
 
-# 啟動開發環境
-# npm run dev 或其他指令
+# 3. 認領第一個任務
+# 前往: https://github.com/users/TobyWuNumOne/projects/1
 ```
 
-## 👥 團隊成員
+## 開發文件
 
-- **組長**: [@TobyWuNumOne](https://github.com/TobyWuNumOne)
-- **組員**:
-- **組員**:
-- **組員**:
-- **前端開發**: 待確認
-- **後端開發**: 待確認
-- **UI/UX**: 待確認
-- **測試**: 待確認
+### 開發規範
 
-## 📅 開發時程
+- 📖 [開發流程指南](docs/development/WORKFLOW.md)
+- 💬 [提交訊息規範](docs/development/COMMIT_GUIDE.md)
 
-- **6/26**: 團隊成員確認
-- **第1週**: 技術棧選型與環境建置
-- **第2-3週**: 核心功能開發
-- **第4週**: 整合測試與部署
+### 分配任務、進度管理
 
-## 🤝 貢獻指南
+- 🐛 [Issue 管理](docs/development/ISSUE_GUIDE.md)
+- 🎯 [任務管理指南](docs/development/TASK_MANAGEMENT.md)
+- 📊 [GitHub Projects 使用](docs/development/GITHUB_PROJECTS.md)
 
-1. Fork 專案
-2. 建立功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交變更 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送分支 (`git push origin feature/AmazingFeature`)
-5. 開啟 Pull Request
+## 🤝 參與開發
 
-## 📄 License
-
-此專案採用 MIT License - 詳見 [LICENSE](LICENSE) 檔案
+1. **新成員加入** → 閱讀 [開發流程指南](docs/development/WORKFLOW.md)
+2. **認領任務** → 查看 [GitHub Projects](https://github.com/users/TobyWuNumOne/projects/1)
+3. **提交代碼** → 遵循 [提交規範](docs/development/COMMIT_GUIDE.md)
+4. **問題回報** → 使用 [Issue 模板](https://github.com/TobyWuNumOne/tutor-matching-platform/issues/new/choose)
 
 ## 📞 聯繫方式
 
-專案連結: [https://github.com/TobyWuNumOne/tutor-matching-platform](https://github.com/TobyWuNumOne/tutor-matching-platform)
+- **技術問題**: [GitHub Issues](https://github.com/TobyWuNumOne/tutor-matching-platform/issues)
+- **功能討論**: [GitHub Discussions](https://github.com/TobyWuNumOne/tutor-matching-platform/discussions)  
+- **PM 聯繫**: [@TobyWuNumOne](https://github.com/TobyWuNumOne)
+
+## 📅 近期重點
+
+- 🗓 **6/26**: 團隊成員最終確認
+- 🏗️ **6/27-6/30**: 技術棧決定 & 環境建置
+- 🚀 **7/1**: 正式開始開發
+
+---
+
+📖 **完整文件**: [docs/](docs/) 資料夾  
+🆘 **需要幫助**: 建立 Issue
+
+*最後更新: 2025-06-23 | 維護者: [@TobyWuNumOne](https://github.com/TobyWuNumOne)*

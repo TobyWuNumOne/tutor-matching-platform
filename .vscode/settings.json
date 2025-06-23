@@ -1,0 +1,13 @@
+{
+    "github.copilot.chat.commitMessageGeneration.instructions":[
+    {
+    "text": ".copilot-commit-message-instructions.md"
+    },
+    {
+    "text": "請一律使用正體中文來撰寫記錄"
+    }
+],
+"editor.codeActionsOnSave": {
+    
+}
+}
