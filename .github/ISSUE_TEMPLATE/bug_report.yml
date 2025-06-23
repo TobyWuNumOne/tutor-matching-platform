@@ -1,0 +1,74 @@
+name: 🐛 Bug Report
+description: 回報系統錯誤或異常行為
+title: "[Bug] "
+labels: ["bug", "triage"]
+assignees: ["TobyWuNumOne"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝你花時間填寫這份錯誤回報！
+
+  - type: input
+    id: summary
+    attributes:
+      label: 錯誤摘要
+      description: 簡短描述遇到的問題
+      placeholder: ex. 登入時出現錯誤訊息
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 重現步驟
+      description: 詳細說明如何重現這個問題
+      placeholder: |
+        1. 進入登入頁面
+        2. 輸入帳號密碼
+        3. 點擊登入按鈕
+        4. 出現錯誤訊息
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 預期行為
+      description: 描述你預期應該發生什麼
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 實際行為
+      description: 描述實際發生了什麼
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 影響元件
+      options:
+        - 會員功能
+        - 商品瀏覽
+        - 購物車
+        - 結帳系統
+        - 後台管理
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 優先級
+      options:
+        - 🔴 高 - 阻擋功能使用
+        - 🟡 中 - 影響使用體驗
+        - 🟢 低 - 小問題
+    validations:
+      required: true

@@ -1,0 +1,63 @@
+name: ✨ Feature Request
+description: 提出新功能或改善建議
+title: "[Feature] "
+labels: ["enhancement"]
+assignees: ["TobyWuNumOne"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝你提出功能建議！
+
+  - type: input
+    id: title
+    attributes:
+      label: 功能標題
+      description: 簡短描述想要的功能
+      placeholder: ex. 新增課程評價系統
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 功能描述
+      description: 詳細說明這個功能的內容和目的
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 所屬模組
+      options:
+        - 會員功能
+        - 商品瀏覽
+        - 購物車
+        - 結帳系統
+        - 後台管理
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 優先級
+      options:
+        - 🔴 高 - 核心功能
+        - 🟡 中 - 重要功能
+        - 🟢 低 - 加分功能
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 驗收標準
+      description: 描述怎樣算是完成這個功能
+      placeholder: |
+        - [ ] 用戶可以對課程評分
+        - [ ] 顯示平均評分
+        - [ ] 評價內容顯示

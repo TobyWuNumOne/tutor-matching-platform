@@ -1,0 +1,72 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        # 前端依賴 (當有 package.json 時)
+        if [ -f "frontend/package.json" ]; then
+          cd frontend && npm ci
+        fi
+        # 後端依賴 (當有 package.json 時)
+        if [ -f "backend/package.json" ]; then
+          cd backend && npm ci
+        fi
+        
+    - name: Run tests
+      run: |
+        # 前端測試
+        if [ -f "frontend/package.json" ]; then
+          cd frontend && npm test
+        fi
+        # 後端測試
+        if [ -f "backend/package.json" ]; then
+          cd backend && npm test
+        fi
+        
+    - name: Build project
+      run: |
+        # 前端建置
+        if [ -f "frontend/package.json" ]; then
+          cd frontend && npm run build
+        fi
+        # 後端建置 (如果需要)
+        if [ -f "backend/package.json" ]; then
+          cd backend && npm run build
+        fi
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to server
+      run: |
+        echo "部署到 fs101.coded2.fun"
+        # 這裡之後會加入實際的部署腳本
