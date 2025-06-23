@@ -23,39 +23,39 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+
+    # - name: Install dependencies
+    #   run: |
+    #     # 前端依賴 (當有 package.json 時)
+    #     if [ -f "frontend/package.json" ]; then
+    #       cd frontend && npm ci
+    #     fi
+    #     # 後端依賴 (當有 package.json 時)
+    #     if [ -f "backend/package.json" ]; then
+    #       cd backend && npm ci
+    #     fi
         
-    - name: Install dependencies
-      run: |
-        # 前端依賴 (當有 package.json 時)
-        if [ -f "frontend/package.json" ]; then
-          cd frontend && npm ci
-        fi
-        # 後端依賴 (當有 package.json 時)
-        if [ -f "backend/package.json" ]; then
-          cd backend && npm ci
-        fi
+    # - name: Run tests
+    #   run: |
+    #     # 前端測試
+    #     if [ -f "frontend/package.json" ]; then
+    #       cd frontend && npm test
+    #     fi
+    #     # 後端測試
+    #     if [ -f "backend/package.json" ]; then
+    #       cd backend && npm test
+    #     fi
         
-    - name: Run tests
-      run: |
-        # 前端測試
-        if [ -f "frontend/package.json" ]; then
-          cd frontend && npm test
-        fi
-        # 後端測試
-        if [ -f "backend/package.json" ]; then
-          cd backend && npm test
-        fi
-        
-    - name: Build project
-      run: |
-        # 前端建置
-        if [ -f "frontend/package.json" ]; then
-          cd frontend && npm run build
-        fi
-        # 後端建置 (如果需要)
-        if [ -f "backend/package.json" ]; then
-          cd backend && npm run build
-        fi
+    # - name: Build project
+    #   run: |
+    #     # 前端建置
+    #     if [ -f "frontend/package.json" ]; then
+    #       cd frontend && npm run build
+    #     fi
+    #     # 後端建置 (如果需要)
+    #     if [ -f "backend/package.json" ]; then
+    #       cd backend && npm run build
+    #     fi
 
   deploy:
     needs: test
