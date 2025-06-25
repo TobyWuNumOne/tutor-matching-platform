@@ -1,4 +1,3 @@
-
 # 家教媒合平台 (Tutor Matching Platform)
 
 > 線下家教媒合平台 - 整合家教媒合、老師評價、課程瀏覽功能
@@ -9,7 +8,7 @@
 ## 專案概述
 
 **時程**: 2025/6/26 確認團隊 → 7/1 開發開始 → 8/15 預計完成  
-**部署**: fs101.coded2.fun  
+**部署**: fs101.coded2.fun
 
 ## 成員
 
@@ -52,6 +51,7 @@ cat docs/development/GETTING_STARTED.md
 
 - 📖 [開發流程指南](docs/development/WORKFLOW.md)
 - 💬 [提交訊息規範](docs/development/COMMIT_GUIDE.md)
+- 📊 [程式碼風格](docs/development/CODE_STYLE.md)
 
 ### 分配任務、進度管理
 
@@ -62,14 +62,14 @@ cat docs/development/GETTING_STARTED.md
 ## 🤝 參與開發
 
 1. **新成員加入** → 閱讀 [開發流程指南](docs/development/WORKFLOW.md)
-2. **認領任務** → 查看 [GitHub Projects](https://github.com/users/TobyWuNumOne/projects/1)
+2. **認領任務** → 查看 [GitHub Projects](https://github.com/users/TobyWuNumOne/projects/4)
 3. **提交代碼** → 遵循 [提交規範](docs/development/COMMIT_GUIDE.md)
 4. **問題回報** → 使用 [Issue 模板](https://github.com/TobyWuNumOne/tutor-matching-platform/issues/new/choose)
 
 ## 📞 聯繫方式
 
 - **技術問題**: [GitHub Issues](https://github.com/TobyWuNumOne/tutor-matching-platform/issues)
-- **功能討論**: [GitHub Discussions](https://github.com/TobyWuNumOne/tutor-matching-platform/discussions)  
+- **功能討論**: [GitHub Discussions](https://github.com/TobyWuNumOne/tutor-matching-platform/discussions)
 - **PM 聯繫**: [@TobyWuNumOne](https://github.com/TobyWuNumOne)
 
 ## 📅 近期重點
@@ -83,4 +83,4 @@ cat docs/development/GETTING_STARTED.md
 📖 **完整文件**: [docs/](docs/) 資料夾  
 🆘 **需要幫助**: 建立 Issue
 
-*最後更新: 2025-06-23 | 維護者: [@TobyWuNumOne](https://github.com/TobyWuNumOne)*
+_最後更新: 2025-06-23 | 維護者: [@TobyWuNumOne](https://github.com/TobyWuNumOne)_
