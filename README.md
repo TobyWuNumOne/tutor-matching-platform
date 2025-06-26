@@ -1,4 +1,4 @@
-# 家教媒合平台 (Tutor Matching Platform)
+b# 家教媒合平台 (Tutor Matching Platform)
 
 [![Github Repository](https://img.shields.io/github/repo-size/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform)[![GitHub Issues](https://img.shields.io/github/issues/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform/stargazers)
@@ -29,11 +29,13 @@
 
 ## 技術棧
 
-**前端**: React.js
-**後端**: Python + 資料庫  
+**前端**: React.js</br>
+**後端**: Python + Django + 資料庫 </br>
 **工具**: GitHub Actions + Docker + ESLint
 
 ## 快速開始
+
+[運行文件](docs/HowToUse/operation.md)
 
 ```bash
 # 1. Clone 專案
@@ -51,8 +53,11 @@ cat docs/development/information.md
 
 ### 相關資料
 
+> 可以將有看到不錯的資料或教學放到 **專案資源**
+
 - 📖 [專案資源](docs/development/information.md)
 - 💬 [專案紀錄](docs/log/Log.md)
+- 🚀 [運行文件](docs/HowToUse/operation.md)
 
 ### 開發規範
 

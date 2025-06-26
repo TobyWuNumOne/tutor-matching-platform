@@ -25,13 +25,20 @@
 - 每個檔案只包含一個主要功能
 - 將功能模組分成資料夾，如:
 
-  ```markdown
-  ├── auth/
-  │ ├── login.js
-  │ ├── register.js
-  ├── utils/
-  │ ├── helpers.js
-  ```
+```zs
+├── backend/         # 後端 Django 應用
+│   ├── manage.py
+│   ├── backend/     # Django 主目錄
+│   ├── api/         # API 模組
+├── frontend/        # 前端 React 應用
+│   ├── src/
+│   ├── package.json
+├── docker-compose.yml
+├── Dockerfile
+├── .env             # 環境變數
+├── README.md
+└── docs/            # 專案文件
+```
 
 ## 其他規範
 
