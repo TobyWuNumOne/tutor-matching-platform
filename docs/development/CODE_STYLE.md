@@ -12,11 +12,15 @@
 
 ## 排版 🌟🌟
 
+> 避免在版本控制中大量出現排版上的編輯，而不是對於程式碼的撰寫
+
 - 在操作符號（如 =、+）前後加空格。
 - **縮排**: 使用 **4 空格**
-- **排版**: 使用 [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+- **排版**:
+  - 使用 [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+  - python 使用 black farmatter
 
-## 檔案結構
+## 檔案結構（待討論）
 
 - 每個檔案只包含一個主要功能
 - 將功能模組分成資料夾，如:
@@ -36,4 +40,4 @@
 - 每個功能模組必須有測試
 - 避免過度嵌套。
 
-> 心有餘力寫個註解，Codereview 也會比較容易
+> 🌟🌟🌟🌟 心有餘力寫個註解，Codereview 也會比較容易

@@ -1,11 +1,11 @@
 # 家教媒合平台 (Tutor Matching Platform)
 
-> 線下家教媒合平台 - 整合家教媒合、老師評價、課程瀏覽功能
-
 [![Github Repository](https://img.shields.io/github/repo-size/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform)[![GitHub Issues](https://img.shields.io/github/issues/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform/stargazers)
 
 ## 專案概述
+
+> 線下家教媒合平台 - 整合家教媒合、老師評價、課程瀏覽功能
 
 **時程**: 2025/6/26 確認團隊 → 7/1 開發開始 → 8/15 預計完成  
 **部署**: fs101.coded2.fun
@@ -15,7 +15,9 @@
 **PM**: [Cody](https://github.com/TobyWuNumOne)</br>
 **Member**[Shen](https://github.com/Shen880421)</br>
 **Member**[Alex](https://github.com/alexlin1127)</br>
-**Member**[Stanley](https://github.com/)</br>
+**Member**[Stanley](https://github.com/)
+</br>
+**Member**[@Kevin](https://github.com/)
 
 ## 核心功能
 
@@ -25,10 +27,10 @@
 - 💳 **交易系統** - 訂單管理、金流整合、交易記錄
 - ⚙️ **後台管理** - 管理介面、統計儀表板、系統設定
 
-## 技術棧 (討論中)
+## 技術棧
 
-**前端**: React.js / Vue.js + TypeScript  
-**後端**: Node.js / Python + 資料庫  
+**前端**: React.js
+**後端**: Python + 資料庫  
 **工具**: GitHub Actions + Docker + ESLint
 
 ## 快速開始
@@ -39,13 +41,18 @@ git clone https://github.com/TobyWuNumOne/tutor-matching-platform.git
 cd tutor-matching-platform
 
 # 2. 查看開發指南
-cat docs/development/GETTING_STARTED.md
+cat docs/development/information.md
 
 # 3. 認領第一個任務
-# 前往: https://github.com/users/TobyWuNumOne/projects/1
+# 前往: https://github.com/users/TobyWuNumOne/projects/4
 ```
 
 ## 開發文件
+
+### 相關資料
+
+- 📖 [專案資源](docs/development/information.md)
+- 💬 [專案紀錄](docs/log/Log.md)
 
 ### 開發規範
 
@@ -83,4 +90,4 @@ cat docs/development/GETTING_STARTED.md
 📖 **完整文件**: [docs/](docs/) 資料夾  
 🆘 **需要幫助**: 建立 Issue
 
-_最後更新: 2025-06-23 | 維護者: [@TobyWuNumOne](https://github.com/TobyWuNumOne)_
+維護者: [@TobyWuNumOne](https://github.com/TobyWuNumOne)

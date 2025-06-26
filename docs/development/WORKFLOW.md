@@ -1,6 +1,6 @@
 # 🔄 開發流程指南
 
->簡單來說就是根據功能從dev.開分支進行開發，完成功能後刪除分支。
+> 簡單來說就是根據功能從 dev.開分支進行開發，完成功能後刪除分支。
 
 ## 🌿 分支策略
 
@@ -20,12 +20,15 @@ Rebase and merge：
 - 線性的提交歷史
 - 需要乾淨的提交紀錄
 
-```markdown
-main          (正式環境 - 受保護)
-├── develop   (開發環境)
-|   ├── feature/user-login    (功能分支)
-|   └── feature/course-search (功能分支)
-└── hotfix/urgent-fix     (緊急修復)
+### `main` (正式環境)、`develop` (開發環境)、`feature` (功能)、`feature/` (功能分支)
+
+```zzh
+main (正式環境 - 受保護)
+├── develop (開發環境)
+|   └── feature(功能總分支)
+|       ├─ feature/user-login (功能分支)
+|       └─ feature/course-search (功能分支)
+└── hotfix/urgent-fix (緊急修復)
 ```
 
 ## 📋 標準工作流程
@@ -122,25 +125,25 @@ git push origin feature/user-profile-page
 ```markdown
 程式碼品質：
 
- 程式碼邏輯正確
- 遵循專案編碼規範
- 適當的錯誤處理
- 沒有明顯的性能問題
- 安全性考量
+程式碼邏輯正確
+遵循專案編碼規範
+適當的錯誤處理
+沒有明顯的性能問題
+安全性考量
 
 測試與文件：
 
- 測試覆蓋率足夠
- 測試案例合理
- 相關文件已更新
- API 文件準確
+測試覆蓋率足夠
+測試案例合理
+相關文件已更新
+API 文件準確
 
 設計與架構：
 
- 符合整體架構設計
- 模組化程度適當
- 可維護性良好
- 遵循 DRY 原則
+符合整體架構設計
+模組化程度適當
+可維護性良好
+遵循 DRY 原則
 ```
 
 ### 7. 清理分支
@@ -155,11 +158,11 @@ git branch -d feature/user-authentication
 ## 🏷️ 分支命名規範
 
 ```markdown
-feature/功能名稱     - 新功能開發
-bugfix/問題描述      - Bug 修復
-hotfix/緊急修復      - 緊急修復
-refactor/重構內容    - 代碼重構
-docs/文件更新        - 文件更新
+feature/功能名稱 - 新功能開發
+bugfix/問題描述 - Bug 修復
+hotfix/緊急修復 - 緊急修復
+refactor/重構內容 - 代碼重構
+docs/文件更新 - 文件更新
 ```
 
 **範例**:
@@ -205,10 +208,12 @@ git reset --soft HEAD~1
 ## 🆘 常見問題
 
 Q: PR 被拒絕後怎麼辦？
->A: 根據審查意見修改，推送新的提交，PR 會自動更新
+
+> A: 根據審查意見修改，推送新的提交，PR 會自動更新
 
 Q: 可以在 PR 中推送新的提交嗎？
->A: 可以，新提交會自動加入到現有的 PR 中
+
+> A: 可以，新提交會自動加入到現有的 PR 中
 
 Q: 如何處理合併衝突？
 
@@ -228,4 +233,5 @@ git push origin feature/your-branch
 ```
 
 Q: PR 太大怎麼辦？
->A: 考慮拆分成多個小的 PR，每個 PR 專注於單一功能
+
+> A: 考慮拆分成多個小的 PR，每個 PR 專注於單一功能
