@@ -1,4 +1,4 @@
-b# 家教媒合平台 (Tutor Matching Platform)
+# 家教媒合平台 (Tutor Matching Platform)
 
 [![Github Repository](https://img.shields.io/github/repo-size/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform)[![GitHub Issues](https://img.shields.io/github/issues/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/TobyWuNumOne/tutor-matching-platform)](https://github.com/TobyWuNumOne/tutor-matching-platform/stargazers)
