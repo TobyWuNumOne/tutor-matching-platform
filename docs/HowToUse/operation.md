@@ -7,12 +7,12 @@
 1. **前端技術**: React.js (透過 Vite 安裝) + SCSS + Bootstrap
 2. **後端技術**: Python + Django
 3. **資料庫**: MariaDB
-   - 遠端資料庫伺服器：
-     - 主機: `fs101.coded2.fun`
-     - Port: `3306`
+    - 遠端資料庫伺服器：
+        - 主機: `fs101.coded2.fun`
+        - Port: `3306`
 4. **環境管理**: 初期使用 `venv`，後續轉移到 Docker。
 5. **版本控制**: Git + GitHub
-   - 已創建好儲存庫，並成功複製到本地。
+    - 已創建好儲存庫，並成功複製到本地。
 6. **使用 venv 建立開發環境**
 
 ---
@@ -23,77 +23,77 @@
 
 1. 在專案目錄下創建後端目錄：
 
-   ```bash
-   mkdir backend && cd backend
-   ```
+    ```bash
+    mkdir backend && cd backend
+    ```
 
 2. 創建 Python 虛擬環境：
 
-   ```bash
-   python -m venv venv
-   ```
+    ```bash
+    python -m venv venv
+    ```
 
 3. 啟用虛擬環境：
 
-   - **Linux/Mac**:
+    - **Linux/Mac**:
 
-     ```bash
-     source venv/bin/activate
-     ```
+        ```bash
+        source venv/bin/activate
+        ```
 
-   - **Windows**:
+    - **Windows**:
 
-     ```bash
-     venv\Scripts\activate
-     ```
+        ```bash
+        venv\Scripts\activate
+        ```
 
 4. 安裝必要套件：
 
-   ```bash
-   pip install django mysqlclient
-   ```
+    ```bash
+    pip install django mysqlclient
+    ```
 
-   - `mysqlclient`: 用於與 MariaDB 互動的驅動程式。
+    - `mysqlclient`: 用於與 MariaDB 互動的驅動程式。
 
 #### 初始化 Django 專案
 
 1. 初始化 Django 專案並創建應用：
 
-   ```bash
-   django-admin startproject backend .
-   python manage.py startapp api
-   ```
+    ```bash
+    django-admin startproject backend .
+    python manage.py startapp api
+    ```
 
 2. 配置 MariaDB 資料庫：
    編輯 `backend/settings.py`，更新資料庫設定：
 
-   ```python
-   DATABASES = {
-       'default': {
-           'ENGINE': 'django.db.backends.mysql',
-           'NAME': '<your-database-name>',  # 資料庫名稱
-           'USER': '<your-username>',       # 資料庫使用者名稱
-           'PASSWORD': '<your-password>',   # 資料庫密碼
-           'HOST': 'fs101.coded2.fun',      # 遠端主機
-           'PORT': '3306',                  # 資料庫端口
-       }
-   }
-   ```
+    ```python
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': '<your-database-name>',  # 資料庫名稱
+            'USER': '<your-username>',       # 資料庫使用者名稱
+            'PASSWORD': '<your-password>',   # 資料庫密碼
+            'HOST': 'fs101.coded2.fun',      # 遠端主機
+            'PORT': '3306',                  # 資料庫端口
+        }
+    }
+    ```
 
 3. 執行資料庫遷移：
 
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
+    ```bash
+    python manage.py makemigrations
+    python manage.py migrate
+    ```
 
 #### 啟動後端伺服器
 
 1. 啟動開發伺服器以測試環境：
 
-   ```bash
-   python manage.py runserver
-   ```
+    ```bash
+    python manage.py runserver
+    ```
 
 ---
 
@@ -103,31 +103,31 @@
 
 1. 返回專案根目錄，創建前端目錄：
 
-   ```bash
-   mkdir ../frontend && cd ../frontend
-   ```
+    ```bash
+    mkdir ../frontend && cd ../frontend
+    ```
 
 2. 使用 Vite 初始化 React 專案：
 
-   ```bash
-   npm create vite@latest . -- --template react
-   ```
+    ```bash
+    npm create vite@latest . -- --template react
+    ```
 
 3. 安裝必要套件：
 
-   ```bash
-   npm install sass bootstrap axios react-router-dom
-   ```
+    ```bash
+    npm install sass bootstrap axios react-router-dom
+    ```
 
 #### 配置 React 應用
 
 1. 在 `src/` 下創建結構化目錄：
 
-   ```zsh
-   ├── components/
-   ├── pages/
-   ├── styles/
-   ```
+    ```zsh
+    ├── components/
+    ├── pages/
+    ├── styles/
+    ```
 
 2. 編寫基本的 `App.jsx`，測試前端是否正常運行。
 
@@ -152,21 +152,21 @@ npm run dev
 
 1. 回到專案根目錄，確認 `.gitignore` 文件內容：
 
-   ```plaintext name=.gitignore
-   node_modules/
-   venv/
-   *.pyc
-   __pycache__/
-   .env
-   ```
+    ```plaintext name=.gitignore
+    node_modules/
+    venv/
+    *.pyc
+    __pycache__/
+    .env
+    ```
 
 2. 提交專案：
 
-   ```bash
-   git add .
-   git commit -m "初始化專案環境"
-   git push origin main
-   ```
+    ```bash
+    git add .
+    git commit -m "初始化專案環境"
+    git push origin main
+    ```
 
 ---
 
@@ -229,33 +229,33 @@ CMD ["npm", "run", "dev"]
 ```yaml name=docker-compose.yml
 version: "3.8"
 services:
-  backend:
-    build:
-      context: ./backend
-    ports:
-      - "8000:8000"
-    environment:
-      - DB_HOST=fs101.coded2.fun
-      - DB_PORT=3306
-      - DB_NAME=<your-database-name>
-      - DB_USER=<your-username>
-      - DB_PASSWORD=<your-password>
+    backend:
+        build:
+            context: ./backend
+        ports:
+            - "8000:8000"
+        environment:
+            - DB_HOST=fs101.coded2.fun
+            - DB_PORT=3306
+            - DB_NAME=<your-database-name>
+            - DB_USER=<your-username>
+            - DB_PASSWORD=<your-password>
 
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - "3000:3000"
+    frontend:
+        build:
+            context: ./frontend
+        ports:
+            - "3000:3000"
 
-  db:
-    image: mariadb:latest
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: <root-password>
-      MYSQL_DATABASE: <your-database-name>
-      MYSQL_USER: <your-username>
-      MYSQL_PASSWORD: <your-password>
+    db:
+        image: mariadb:latest
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: <root-password>
+            MYSQL_DATABASE: <your-database-name>
+            MYSQL_USER: <your-username>
+            MYSQL_PASSWORD: <your-password>
 ```
 
 ---
@@ -264,13 +264,13 @@ services:
 
 1. 啟動容器：
 
-   ```bash
-   docker-compose up --build
-   ```
+    ```bash
+    docker-compose up --build
+    ```
 
 2. 測試：
-   - 前端：`http://localhost:3000`
-   - 後端 API：`http://localhost:8000/api`
+    - 前端：`http://localhost:3000`
+    - 後端 API：`http://localhost:8000/api`
 
 ---
 
@@ -290,7 +290,7 @@ npm run dev
 
 ### 除錯
 
-- vite@7.0.0 和 react-router-dom@7.6.2 需要 Node.js 版本 >=20。
+-   vite@7.0.0 和 react-router-dom@7.6.2 需要 Node.js 版本 >=20。
 
 ## 運行後端伺服器
 
