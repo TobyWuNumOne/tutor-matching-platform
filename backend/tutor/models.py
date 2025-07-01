@@ -21,14 +21,14 @@ class Users(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # 新增時自動填入
     updated_at = models.DateTimeField(auto_now=True)      # 每次儲存時自動更新
     class Meta:
-        db_table = 'teacher'
+        db_table = 'Users'
     
     def __str__(self):
         return self.name
 #建立Courses表格
 class Courses(models.Model):
     id = models.AutoField(primary_key=True)  # 自動遞增主鍵
-    teacher = models.ForeignKey(
+    teacher_id = models.ForeignKey(
         'Users',
         on_delete=models.CASCADE,
         limit_choices_to={'role': 'teacher'},  # 只在 admin 或表單過濾
@@ -41,4 +41,30 @@ class Courses(models.Model):
     description = models.TextField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
-        db_table = 'student'
+        db_table = 'Courses'
+#建立Bookings表格
+class Bookings(models.Model):
+    id = models.AutoField(primary_key=True)  # 自動遞增主鍵
+    student_id = models.ForeignKey(
+        'Users',
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'student'},  # 只在 admin 或表單過濾
+        related_name='bookings',
+        null=True
+    )
+    course_id = models.ForeignKey(
+        'Courses',
+        on_delete=models.CASCADE,
+        related_name='bookings',
+        null=True
+    )
+    schedule_date = models.CharField(max_length=255, null=False)
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, null=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = 'Bookings'
