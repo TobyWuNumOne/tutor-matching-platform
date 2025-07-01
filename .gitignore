@@ -2,7 +2,8 @@
 venv/
 env/
 .env
-__pycache__/
+**/__pycache__/**
+**/venv/**
 *.pyc
 
 # Node.js
