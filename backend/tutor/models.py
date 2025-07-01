@@ -25,10 +25,20 @@ class Users(models.Model):
     
     def __str__(self):
         return self.name
-
-class Student(models.Model):
-    name = models.CharField(max_length=255, null=False)
-    phone = models.CharField(max_length=255, null=True)
-
+#建立Courses表格
+class Courses(models.Model):
+    id = models.AutoField(primary_key=True)  # 自動遞增主鍵
+    teacher = models.ForeignKey(
+        'Users',
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'teacher'},  # 只在 admin 或表單過濾
+        related_name='courses',
+        null=True
+    )
+    subject = models.CharField(max_length=255, null=False)
+    price_per_hour = models.DecimalField(max_digits=6, decimal_places=2, null=False)#6位數(包含小數點後2位):最高9999.99
+    location = models.CharField(max_length=255, null=True)
+    description = models.TextField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         db_table = 'student'
