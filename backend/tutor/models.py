@@ -1,14 +1,25 @@
 from django.db import models
 
-class Teacher(models.Model):
+#建立Users表格
+class Users(models.Model):
+    id = models.AutoField(primary_key=True)  # 自動遞增主鍵 
     name = models.CharField(max_length=255, null=False)
-    subject = models.CharField(max_length=255, null=False)
-    phone = models.CharField(max_length=255, null=True)
-    student = models.ManyToManyField(
-        to="tutor.Student",
-        related_name="teacher",
-        null=True
-    )
+    email = models.EmailField(max_length=255, null=False, unique=True)
+    #   ↑設定email格式
+        #必須包含「@」符號。
+        #必須有一個有效的網域（如 example.com）。
+        #不允許空白字元。
+        #最長長度由 max_length 控制（預設 254）。
+        #不會驗證信箱是否真實存在，只檢查格式。 
+    password = models.CharField(max_length=255, null=False)
+    ROLE_CHOICES = [
+        ('teacher', 'Teacher'),
+        ('student', 'Student'),
+        ('both', 'Both'),
+    ]
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, null=False)
+    created_at = models.DateTimeField(auto_now_add=True)  # 新增時自動填入
+    updated_at = models.DateTimeField(auto_now=True)      # 每次儲存時自動更新
     class Meta:
         db_table = 'teacher'
     

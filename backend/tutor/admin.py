@@ -1,7 +1,7 @@
 from django.contrib import admin
 from tutor.models import *
 
-@admin.register(Teacher)
+@admin.register(Users)
 class TeacherAdmin(admin.ModelAdmin):
     list_display = ('name', 'subject', 'phone')
     search_fields = ('name',)
