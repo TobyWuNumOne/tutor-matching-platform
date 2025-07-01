@@ -40,6 +40,12 @@ class Courses(models.Model):
     location = models.CharField(max_length=255, null=True)
     description = models.TextField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    students = models.ManyToManyField(
+        'Users',
+        related_name='enrolled_courses',
+        limit_choices_to={'role': 'student'},
+        blank=True
+    )
     class Meta:
         db_table = 'Courses'
 #建立Bookings表格
