@@ -68,3 +68,24 @@ class Bookings(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         db_table = 'Bookings'
+#建立Reviews表格
+class Reviews(models.Model):
+    id = models.AutoField(primary_key=True)  # 自動遞增主鍵
+    course_id = models.ForeignKey(
+        'Courses',
+        on_delete=models.CASCADE,
+        related_name='bookings',
+        null=True
+    )
+    student_id = models.ForeignKey(
+        'Users',
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'student'},  # 只在 admin 或表單過濾
+        related_name='bookings',
+        null=True
+    )
+    rating = models.CharField(max_length=255, null=False)
+    comment = models.CharField(max_length=255, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = 'Reviews'
