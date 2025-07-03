@@ -18,15 +18,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
+from rest_framework.routers import DefaultRouter
+from tutor.views import TutorViewSet
 
 
 # 簡單的首頁視圖
 def home(request):
     return HttpResponse("<h1>Welcome to the Django Backend!</h1>")
 
-
+router = DefaultRouter()
+router.register(r'tutor', TutorViewSet)
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/", include("api.urls")),  # API 路由
+    path("api/", include(router.urls)),  # API 路由
     path("", home),  # 空路徑的處理方式
 ]
