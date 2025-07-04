@@ -127,5 +127,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",  # 僅啟用 JSON 渲染
+        'rest_framework.renderers.BrowsableAPIRenderer', #可以用REST framework UI渲染
     ],
 }
