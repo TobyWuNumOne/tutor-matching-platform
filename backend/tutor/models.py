@@ -1,12 +1,13 @@
 from django.db import models
 from django.db.models import Q, CheckConstraint
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import AbstractUser
 
 # Choices 定義於 class 外，方便 constraint 使用
 ROLE_CHOICES = [
     ("teacher", "Teacher"),
     ("student", "Student"),
     ("both", "Both"),
+    ("superuser", "Superuser"),  # 新增 superuser 選項
 ]
 ROLE_VALUES = [choice[0] for choice in ROLE_CHOICES]
 
@@ -20,21 +21,49 @@ STATUS_VALUES = [choice[0] for choice in STATUS_CHOICES]
 RATING_CHOICES = [str(i) for i in range(1, 6)]  # 假設評分為1~5分
 
 
-# 建立Users表格
-class Users(models.Model):
-    id = models.AutoField(primary_key=True)  # 自動遞增主鍵
-    name = models.CharField(max_length=255, null=False)
-    email = models.EmailField(max_length=255, null=False, unique=True)
-    #   ↑設定email格式
-    # 必須包含「@」符號。
-    # 必須有一個有效的網域（如 example.com）。
-    # 不允許空白字元。
-    # 最長長度由 max_length 控制（預設 254）。
-    # 不會驗證信箱是否真實存在，只檢查格式。
-    password = models.CharField(max_length=255, null=False)
+# 建立Users表格 - 繼承 AbstractUser
+class Users(AbstractUser):
+    # 繼承 AbstractUser 已包含：
+    # - username (必填，唯一)
+    # - first_name, last_name  
+    # - email (可選，但我們可設為必填)
+    # - password (自動雜湊)
+    # - is_active, is_staff, is_superuser
+    # - date_joined, last_login
+    
+    # 我們的自訂欄位
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, null=False)
-    created_at = models.DateTimeField(auto_now_add=True)  # 新增時自動填入
-    updated_at = models.DateTimeField(auto_now=True)  # 每次儲存時自動更新
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # 設定 email 為必填且唯一
+    email = models.EmailField(unique=True, null=False)
+    
+    # name property - 結合 username 或 first_name/last_name
+    @property
+    def name(self):
+        """回傳完整姓名或 username"""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.username
+    
+    def save(self, *args, **kwargs):
+        """儲存時根據 role 設定權限"""
+        if self.role == 'superuser':
+            self.is_staff = True
+            self.is_superuser = True
+        else:
+            self.is_staff = False
+            self.is_superuser = False
+        super().save(*args, **kwargs)
+    
+    def has_perm(self, perm, obj=None):
+        """檢查用戶權限"""
+        return self.role == 'superuser'
+    
+    def has_module_perms(self, app_label):
+        """檢查模組權限"""
+        return self.role == 'superuser'
 
     class Meta:
         db_table = "Users"
@@ -47,12 +76,6 @@ class Users(models.Model):
 
     def __str__(self):
         return self.name
-
-    # 設定儲存前自動將密碼欄位進行雜湊（使用 Django 內建 make_password）
-    def save(self, *args, **kwargs):
-        if not self.password.startswith("pbkdf2_"):
-            self.password = make_password(self.password)
-        super().save(*args, **kwargs)
 
 
 # 建立Courses表格

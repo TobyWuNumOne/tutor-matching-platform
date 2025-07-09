@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "tutor.apps.TutorConfig",
-    "rest_framework"
+    "rest_framework",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
@@ -112,7 +113,7 @@ WSGI_APPLICATION = "backend.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": BASE_DIR / "db_final.sqlite3",
     }
 }
 
@@ -135,23 +136,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
-LANGUAGE_CODE = "zh-Hant"
-
-TIME_ZONE = "Asia/Taipei"
-
-USE_I18N = True
-
-USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
-STATIC_URL = "static/"
+# 自訂用戶模型
+AUTH_USER_MODEL = 'tutor.Users'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -164,3 +150,8 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer', #可以用REST framework UI渲染
     ],
 }
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.2/howto/static-files/
+
+STATIC_URL = "static/"
