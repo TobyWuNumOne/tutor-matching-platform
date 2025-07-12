@@ -5,7 +5,7 @@ import LoginPage from '../pages/LoginPage.vue';
 import Register from '../pages/Register.vue';
 import Search from '../pages/Search.vue';
 import PersonalDashboard from '../pages/PersonalDashboard.vue';
-import TeacherDashboard from '../pages/PersonalDashboard.vue';
+import TeacherDashboard from '../pages/TeacherDashboard.vue';
 
 const routes = [
     {
