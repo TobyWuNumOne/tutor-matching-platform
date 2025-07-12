@@ -28,7 +28,7 @@ const showAllTeachers = ref(false)
   <div class="flex flex-col min-h-screen">
     <Navbar />
 
-    <main class="flex-1 bg-gray-50 p-6 pt-[110px]">
+    <main class="flex-1 bg-gray-50 p-6 pt-[110px] mt-4">
       <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-10 gap-6">
         <!-- 左側 -->
         <div class="md:col-span-3 bg-white p-4 rounded-lg shadow flex flex-col items-center">
