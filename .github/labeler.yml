@@ -1,0 +1,5 @@
+frontend/*: frontend
+backend/*: backend
+docs/*: documentation
+tests/*: tests
+.github/workflows/*: ci/cd
