@@ -16,8 +16,8 @@
 **Member**[Shen](https://github.com/Shen880421)</br>
 **Member**[Alex](https://github.com/alexlin1127)</br>
 **Member**[Stanley](https://github.com/)
-</br>
 **Member**[@Kevin](https://github.com/)
+</br>
 
 ## 核心功能
 
