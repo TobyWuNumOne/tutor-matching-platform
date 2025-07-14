@@ -1,13 +1,20 @@
 {
-    "github.copilot.chat.commitMessageGeneration.instructions":[
-    {
-    "text": ".copilot-commit-message-instructions.md"
-    },
-    {
-    "text": "請一律使用正體中文來撰寫記錄"
+    "github.copilot.chat.commitMessageGeneration.instructions": [
+        {
+            "text": ".copilot-commit-message-instructions.md"
+        },
+        {
+            "text": "請一律使用正體中文來撰寫記錄"
+        }
+    ],
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnType": true, // required
+    "editor.formatOnPaste": true, // optional
+    "editor.formatOnSave": true, // optional
+    "editor.formatOnSaveMode": "file", // required to format on save
+    "files.autoSave": "onFocusChange", // optional but recommended
+    "prettier.tabWidth": 4,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
     }
-],
-"editor.codeActionsOnSave": {
-    
-}
 }
