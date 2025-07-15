@@ -1,46 +1,51 @@
 <script setup>
-    import { ref } from 'vue';
-    import Navbar from '../components/Navbar.vue';
-    import Footer from '../components/Footer.vue';
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import Navbar from "../components/Navbar.vue";
+import Footer from "../components/Footer.vue";
 
-    // 資料
-    const CourseCategories = ['國文', '英文', '數學', '社會', '自然', '日文'];
-    const Rating = ['5顆星', '4顆星', '3顆星', '2顆星', '1顆星'];
+// 資料
+const CourseCategories = ["國文", "英文", "數學", "社會", "自然", "日文"];
+const Rating = ["5顆星", "4顆星", "3顆星", "2顆星", "1顆星"];
 
-    const selectedCategory = ref('');
-    const selectedRating = ref('');
-    const login = ref(true); // 預設為未登入，可切換成 true 模擬登入成功
+const selectedCategory = ref("");
+const selectedRating = ref("");
+const login = ref(true); // 預設為未登入，可切換成 true 模擬登入成功
+const router = useRouter();
 
-    // 假老師資料
-    const Teachers = [
-        { name: '老師A', rating: 5, subject: '國文' },
-        { name: '老師B', rating: 4, subject: '英文' },
-        { name: '老師C', rating: 3, subject: '數學' },
-        { name: '老師D', rating: 2, subject: '社會' },
-        { name: '老師E', rating: 1, subject: '自然' },
-        { name: '老師F', rating: 5, subject: '日文' },
-        { name: '老師G', rating: 4, subject: '國文' },
-        { name: '老師H', rating: 3, subject: '英文' },
-        { name: '老師I', rating: 2, subject: '數學' },
-        { name: '老師J', rating: 1, subject: '社會' },
-        { name: '老師K', rating: 5, subject: '自然' },
-        { name: '老師L', rating: 4, subject: '日文' },
-        { name: '老師M', rating: 3, subject: '國文' },
-        { name: '老師N', rating: 2, subject: '英文' },
-        { name: '老師O', rating: 1, subject: '數學' },
-        { name: '老師P', rating: 5, subject: '社會' },
-    ];
+// 假老師資料
+const Teachers = [
+    { name: "老師A", rating: 5, subject: "國文" },
+    { name: "老師B", rating: 4, subject: "英文" },
+    { name: "老師C", rating: 3, subject: "數學" },
+    { name: "老師D", rating: 2, subject: "社會" },
+    { name: "老師E", rating: 1, subject: "自然" },
+    { name: "老師F", rating: 5, subject: "日文" },
+    { name: "老師G", rating: 4, subject: "國文" },
+    { name: "老師H", rating: 3, subject: "英文" },
+    { name: "老師I", rating: 2, subject: "數學" },
+    { name: "老師J", rating: 1, subject: "社會" },
+    { name: "老師K", rating: 5, subject: "自然" },
+    { name: "老師L", rating: 4, subject: "日文" },
+    { name: "老師M", rating: 3, subject: "國文" },
+    { name: "老師N", rating: 2, subject: "英文" },
+    { name: "老師O", rating: 1, subject: "數學" },
+    { name: "老師P", rating: 5, subject: "社會" },
+];
 
-    // 控制哪個 modal 被打開
-    const activeModalIndex = ref(null);
+// 控制哪個 modal 被打開
+const activeModalIndex = ref(null);
 
-    function openModal(index) {
-        activeModalIndex.value = index;
-    }
+function openModal(index) {
+    activeModalIndex.value = index;
+}
 
-    function closeModal() {
-        activeModalIndex.value = null;
-    }
+function closeModal() {
+    activeModalIndex.value = null;
+}
+function goToTeacherInfo(teacherName) {
+    router.push(`/teacher/${encodeURIComponent(teacherName)}`);
+}
 </script>
 
 <template>
@@ -84,10 +89,12 @@
         <section
             class="flex-1 p-6 bg-gray-100 grid grid-cols-2 gap-4 sm:grid-cols-4 overflow-x-auto"
         >
+            <!-- click冒泡事件用.self 只在點擊卡片背景時觸發跳轉之後 優化可以添加 -->
             <div
                 v-for="(teacher, index) in Teachers"
                 :key="index"
-                class="bg-white rounded-xl shadow-md p-4 flex flex-col items-center min-w-[200px]"
+                @click="goToTeacherInfo(teacher.name)"
+                class="bg-white rounded-xl shadow-md p-4 flex flex-col items-center min-w-[200px] relative cursor-pointer hover:shadow-lg transition"
             >
                 <img
                     :src="`https://source.unsplash.com/random/200x200?sig=${index}`"
@@ -113,9 +120,10 @@
                 </div>
 
                 <!-- 預約按鈕 -->
+                <!-- .stop 讓按鈕保留自身功能，不被外層點擊攔截 -->
                 <button
                     class="bg-[#3F3FF0] text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer transition"
-                    @click="openModal(index)"
+                    @click.stop="openModal(index)"
                 >
                     預約老師
                 </button>

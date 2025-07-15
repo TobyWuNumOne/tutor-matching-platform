@@ -1,40 +1,45 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import Home from '../pages/Home.vue';
-import About from '../pages/About.vue';
-import LoginPage from '../pages/LoginPage.vue';
-import Register from '../pages/Register.vue';
-import Search from '../pages/Search.vue';
-import PersonalDashboard from '../pages/PersonalDashboard.vue';
-import TeacherDashboard from '../pages/TeacherDashboard.vue';
+import { createRouter, createWebHistory } from "vue-router";
+import Home from "../pages/Home.vue";
+import About from "../pages/About.vue";
+import LoginPage from "../pages/LoginPage.vue";
+import Register from "../pages/Register.vue";
+import Search from "../pages/Search.vue";
+import PersonalDashboard from "../pages/PersonalDashboard.vue";
+import TeacherDashboard from "../pages/TeacherDashboard.vue";
+import TeacherInfoPage from "../pages/TeacherInfoPage.vue";
 
 const routes = [
     {
-        path: '/',
+        path: "/",
         component: Home,
     },
     {
-        path: '/about',
+        path: "/about",
         component: About,
     },
     {
-        path: '/login',
+        path: "/login",
         component: LoginPage,
     },
     {
-        path: '/register',
+        path: "/register",
         component: Register,
     },
     {
-        path: '/search',
+        path: "/search",
         component: Search,
     },
     {
-        path: '/personaldashboard',
+        path: "/personaldashboard",
         component: PersonalDashboard,
     },
     {
-        path: '/teacherdashboard',
+        path: "/teacherdashboard",
         component: TeacherDashboard,
+    },
+    {
+        path: "/teacher/:teacherName",
+        component: TeacherInfoPage,
     },
 ];
 
