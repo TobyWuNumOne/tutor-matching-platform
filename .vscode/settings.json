@@ -1,10 +1,13 @@
 {
     "github.copilot.chat.commitMessageGeneration.instructions": [
         {
-            "text": ".copilot-commit-message-instructions.md"
+            "file": ".copilot-commit-message-instructions.md"
         },
         {
-            "text": "請一律使用正體中文來撰寫記錄"
+            "text": "Write commit messages in Traditional Chinese."
+        },
+        {
+            "text": "請一律使用繁體中文來撰寫記錄"
         }
     ],
     "editor.defaultFormatter": "esbenp.prettier-vscode",
