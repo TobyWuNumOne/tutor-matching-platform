@@ -1,5 +1,6 @@
 <script setup>
-    import { ref } from 'vue';
+    import Navbar from '../components/Navbar.vue';
+    import { ref, watch } from 'vue';
     import { RouterLink } from 'vue-router';
 
     // 密碼顯示控制
@@ -7,26 +8,29 @@
     const showConfirmPassword = ref(false);
     const password = ref('');
     const confirmPassword = ref('');
+    const passwordError = ref(''); // 新增錯誤訊息狀態
+
+    // 確認密碼的雙向綁定
+    watch([password, confirmPassword], ([newPassword, newConfirmPassword]) => {
+        if (newConfirmPassword && newPassword !== newConfirmPassword) {
+            // 顯示錯誤訊息
+            passwordError.value = '密碼不一致';
+        } else {
+            passwordError.value = ''; // 清除錯誤訊息
+        }
+    });
 </script>
 
 <template>
+    <Navbar />
     <div
-        class="min-h-screen flex flex-col items-center justify-center bg-gray-100 relative"
+        class="flex flex-col items-center justify-center bg-gray-100 relative pt-20 mt-10"
     >
-        <!-- Logo 區 -->
-        <div class="absolute top-4 left-4 flex items-center gap-4">
-            <img
-                src="../assets/customer-service-headset.png"
-                class="w-20 h-20"
-            />
-            <h2 class="text-2xl font-bold">家教媒合平台</h2>
-        </div>
-
         <!-- 註冊卡片 -->
         <div
             class="bg-white shadow-lg rounded-lg p-8 w-[90%] max-w-md space-y-6"
         >
-            <form class="space-y-4">
+            <form class="space-y-4" @submit.prevent="">
                 <div class="text-center space-y-1">
                     <p class="text-xl font-semibold">立即加入我們</p>
                     <p class="text-gray-500 text-sm">請輸入基本資訊</p>
@@ -37,21 +41,43 @@
                     <label class="text-sm font-medium">姓名</label>
                     <input
                         type="text"
+                        required
                         class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
 
                     <label class="text-sm font-medium">帳號（Email）</label>
                     <input
                         type="email"
+                        required
                         class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-
+                    <!-- 性別欄位 -->
+                    <label class="text-sm font-medium">性別</label>
+                    <select
+                        id="underline_select"
+                        required
+                        class="block py-2.5 px-3 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-gray-200 peer"
+                    >
+                        <option value="" disabled selected>
+                            Choose a gender
+                        </option>
+                        <option value="male">男</option>
+                        <option value="female">女</option>
+                    </select>
+                    <!-- 年紀欄位 -->
+                    <label class="text-sm font-medium">年齡</label>
+                    <input
+                        type="number"
+                        required
+                        class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                     <!-- 密碼欄位 -->
                     <label class="text-sm font-medium">密碼</label>
                     <div class="relative">
                         <input
                             :type="showPassword ? 'text' : 'password'"
                             v-model="password"
+                            required
                             class="w-full rounded-md border border-gray-300 px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <span
@@ -75,6 +101,7 @@
                         <input
                             :type="showConfirmPassword ? 'text' : 'password'"
                             v-model="confirmPassword"
+                            required
                             class="w-full rounded-md border border-gray-300 px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <span
@@ -91,11 +118,15 @@
                             ></i>
                         </span>
                     </div>
+                    <p v-if="passwordError" class="text-red-500 text-sm">
+                        {{ passwordError }}
+                    </p>
                 </div>
 
                 <!-- 註冊按鈕區 -->
                 <div class="grid gap-3">
                     <button
+                        type="submit"
                         class="bg-blue-600 text-white py-2 rounded-md text-center hover:bg-blue-700 transition cursor-pointer"
                     >
                         註冊
