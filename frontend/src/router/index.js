@@ -7,6 +7,7 @@ import Search from "../pages/Search.vue";
 import PersonalDashboard from "../pages/PersonalDashboard.vue";
 import TeacherDashboard from "../pages/TeacherDashboard.vue";
 import TeacherInfoPage from "../pages/TeacherInfoPage.vue";
+import Booking from "../pages/Booking.vue";
 
 const routes = [
     {
@@ -40,6 +41,10 @@ const routes = [
     {
         path: "/teacher/:teacherName",
         component: TeacherInfoPage,
+    },
+    {
+        path: "/booking",
+        component: Booking,
     },
 ];
 
