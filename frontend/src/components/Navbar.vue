@@ -26,32 +26,20 @@
 
 <template>
     <nav
-        class="fixed top-0 w-full h-[110px] bg-[#3F3FF0] rounded-b-xl flex justify-between items-center px-4 z-50"
+        class="fixed top-0 w-full h-[80px] bg-[#3F3FF0] flex justify-between items-center px-4 z-50"
     >
         <!-- 左側 logo -->
         <div class="flex items-center gap-2 sm:gap-5">
             <img
                 src="../assets/customer-service-headset.png"
-                class="w-10 h-10 sm:w-[90px] sm:h-[90px] invert"
+                class="w-10 h-10 invert"
             />
             <p class="text-white text-base sm:text-2xl">
                 <RouterLink to="/">家教媒合平台</RouterLink>
             </p>
         </div>
-
-        <!-- 中間語言選單 -->
-        <select
-            class="ml-auto bg-[#3F3FF0] text-white text-sm sm:text-lg border-0 hover:cursor-pointer focus:outline-none mr-4"
-            v-model="selectedLang"
-            @change="handleLanguageChange"
-        >
-            <option v-for="(item, i) in languages" :key="i" :value="item">
-                {{ item }}
-            </option>
-        </select>
-
         <!-- 桌機版導覽與按鈕 -->
-        <div class="hidden sm:flex items-center gap-5">
+        <div class="hidden md:flex items-center gap-5">
             <div
                 class="text-white flex items-center gap-3"
                 v-if="role === 'student' && $route.path !== '/'"
@@ -107,7 +95,7 @@
 
         <!-- 手機版漢堡選單 -->
         <button
-            class="sm:hidden text-white"
+            class="md:hidden text-white"
             @click="toggleMobileMenu"
             aria-label="Toggle Menu"
         >
