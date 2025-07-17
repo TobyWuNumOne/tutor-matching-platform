@@ -1,85 +1,86 @@
 <script setup>
-import Navbar from "../components/Navbar.vue";
-import { ref, watch } from "vue";
-import { RouterLink } from "vue-router";
-import axios from "axios"; // 確保已安裝 axios
+    import Navbar from '../components/Navbar.vue';
+    import { ref, watch } from 'vue';
+    import { RouterLink } from 'vue-router';
+    import axios from 'axios'; // 確保已安裝 axios
 
-// 密碼顯示控制
-const showPassword = ref(false);
-const showConfirmPassword = ref(false);
-const password = ref("");
-const confirmPassword = ref("");
-const passwordError = ref(""); // 新增錯誤訊息狀態
-const name = ref(""); // 新增姓名的狀態
-const email = ref(""); // 新增電子郵件的狀態
-const gender = ref(""); // 新增性別的狀態
-const age = ref(""); // 新增年齡的狀態
-const ageError = ref(""); // 新增年齡錯誤訊息狀態
+    // 密碼顯示控制
+    const showPassword = ref(false);
+    const showConfirmPassword = ref(false);
+    const password = ref('');
+    const confirmPassword = ref('');
+    const passwordError = ref(''); // 新增錯誤訊息狀態
+    const name = ref(''); // 新增姓名的狀態
+    const email = ref(''); // 新增電子郵件的狀態
+    const gender = ref(''); // 新增性別的狀態
+    const age = ref(''); // 新增年齡的狀態
+    const ageError = ref(''); // 新增年齡錯誤訊息狀態
 
-// 確認密碼的雙向綁定
-watch([password, confirmPassword], ([newPassword, newConfirmPassword]) => {
-    if (newConfirmPassword && newPassword !== newConfirmPassword) {
-        // 顯示錯誤訊息
-        passwordError.value = "密碼不一致";
-    } else {
-        passwordError.value = ""; // 清除錯誤訊息
-    }
-});
-
-// 年齡限制檢查
-watch(age, (newAge) => {
-    if (newAge && newAge < 18) {
-        ageError.value = "未滿18歲不得註冊";
-    } else {
-        ageError.value = ""; // 清除年齡錯誤訊息
-    }
-});
-
-const handleSubmit = async () => {
-    try {
-        // 阻擋年齡低於18歲的表單提交
-        if (age.value < 18) {
-            alert("未滿18歲不得註冊");
-            return;
+    // 確認密碼的雙向綁定
+    watch([password, confirmPassword], ([newPassword, newConfirmPassword]) => {
+        if (newConfirmPassword && newPassword !== newConfirmPassword) {
+            // 顯示錯誤訊息
+            passwordError.value = '密碼不一致';
+        } else {
+            passwordError.value = ''; // 清除錯誤訊息
         }
-        if (passwordError.value) {
-            alert(passwordError.value);
-            return;
+    });
+
+    // 年齡限制檢查
+    watch(age, (newAge) => {
+        if (newAge && newAge < 18) {
+            ageError.value = '未滿18歲不得註冊';
+        } else {
+            ageError.value = ''; // 清除年齡錯誤訊息
         }
-        // 提交主要註冊資料
-        const userData = {
-            name: name.value,
-            email: email.value,
-            password: password.value,
-        };
-        await axios.post("/api/register", userData);
+    });
 
-        // 提交性別和年齡到另一個資料表
-        const additionalData = {
-            gender: gender.value,
-            age: age.value,
-        };
-        await axios.post("/api/user-details", additionalData);
+    const handleSubmit = async () => {
+        try {
+            // 阻擋年齡低於18歲的表單提交
+            if (age.value < 18) {
+                alert('未滿18歲不得註冊');
+                return;
+            }
+            if (passwordError.value) {
+                alert(passwordError.value);
+                return;
+            }
+            // 提交主要註冊資料
+            const userData = {
+                name: name.value,
+                email: email.value,
+                password: password.value,
+            };
+            await axios.post('/api/register', userData);
 
-        //alert('註冊成功！');
-        //轉跳回登入頁面
-        window.location.href = "/login"; // 或使用 router.push('/login') 進行
-    } catch (error) {
-        console.error("註冊失敗", error);
-        alert("註冊失敗，請稍後再試");
-    }
-};
+            // 提交性別和年齡到另一個資料表
+            const additionalData = {
+                gender: gender.value,
+                age: age.value,
+            };
+            await axios.post('/api/user-details', additionalData);
+
+            //alert('註冊成功！');
+            //轉跳回登入頁面
+            window.location.href = '/login'; // 或使用 router.push('/login') 進行
+        } catch (error) {
+            console.error('註冊失敗', error);
+            alert('註冊失敗，請稍後再試');
+        }
+    };
 </script>
 
 <template>
-    <Navbar />
     <div
+        class="flex flex-col items-center justify-center bg-gray-100 relative pt-20"
         class="flex flex-col items-center justify-center bg-gray-100 relative pt-20"
     >
         <!-- 註冊卡片 -->
         <div
             class="bg-white shadow-lg rounded-lg p-8 w-[90%] max-w-md space-y-6"
         >
+            <form class="space-y-4" @submit.prevent="handleSubmit">
             <form class="space-y-4" @submit.prevent="handleSubmit">
                 <div class="text-center space-y-1">
                     <p class="text-xl font-semibold">立即加入我們</p>
@@ -92,6 +93,7 @@ const handleSubmit = async () => {
                     <input
                         type="text"
                         v-model="name"
+                        v-model="name"
                         required
                         class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -100,6 +102,7 @@ const handleSubmit = async () => {
                     <input
                         type="email"
                         v-model="email"
+                        v-model="email"
                         required
                         class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -107,6 +110,7 @@ const handleSubmit = async () => {
                     <label class="text-sm font-medium">性別</label>
                     <select
                         id="underline_select"
+                        v-model="gender"
                         v-model="gender"
                         required
                         class="block py-2.5 px-3 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-gray-200 peer"
@@ -119,6 +123,18 @@ const handleSubmit = async () => {
                     </select>
                     <!-- 年紀欄位 -->
                     <label class="text-sm font-medium">年齡</label>
+                    <div class="relative">
+                        <input
+                            type="number"
+                            v-model="age"
+                            required
+                            class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p v-if="ageError" class="text-red-500 text-sm">
+                            {{ ageError }}
+                        </p>
+                    </div>
+
                     <div class="relative">
                         <input
                             type="number"
