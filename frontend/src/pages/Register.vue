@@ -72,7 +72,6 @@
 </script>
 
 <template>
-    <Navbar />
     <div
         class="flex flex-col items-center justify-center bg-gray-100 relative pt-20"
     >
