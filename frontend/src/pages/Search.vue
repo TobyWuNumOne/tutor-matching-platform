@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
+import axios from "axios";
 
 // 資料
 const CourseCategories = ["國文", "英文", "數學", "社會", "自然", "日文"];
@@ -28,14 +29,15 @@ async function fetchCourses() {
     loading.value = true;
     error.value = "";
     try {
-        const response = await fetch("/api/courses");
-        const result = await response.json();
+        const response = await axios.get("/api/courses");
 
-        if (result.success) {
-            //如果result有成功拉到資料(result.success = true)
-            courses.value = result.data;
+        if (response.data.success) {
+            //如果response有成功拉到資料(response.data.success = true)
+            courses.value = response.data.data;
         } else {
-            error.value = result.error ? result.error : "資料拉取失敗";
+            error.value = response.data.error
+                ? response.data.error
+                : "資料拉取失敗";
             //如果後端api有回傳error的話顯示error，沒有的話顯示"資料拉取失敗"
         }
     } catch (err) {
