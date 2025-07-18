@@ -1,9 +1,17 @@
+# 登入、註冊（JWT）
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token
 from app.models.user import User
 from app.extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import (
+    create_access_token,
+    create_refresh_token,
+    jwt_required,
+    get_jwt_identity,
+    get_jwt,
+)
 from app.schemas import UserCreateSchema, UserResponseSchema
+from app.utils.token_blacklist import token_blacklist
 from marshmallow import ValidationError
 
 auth_bp = Blueprint("auth", __name__)
@@ -94,3 +102,87 @@ def refresh():
         return jsonify({"error": str(e)}), 500
 
 
+@auth_bp.route("/logout", methods=["POST"])
+@jwt_required()
+def logout():
+    """登出 - 將當前access token加入黑名單"""
+    try:
+        jwt_data = get_jwt()
+        jti = jwt_data["jti"]  # JWT ID
+        exp = jwt_data["exp"]  # 過期時間
+
+        # 添加到黑名單，標記為access token
+        token_blacklist.add_token(jti, exp, "access")
+        return jsonify({"message": "成功登出"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@auth_bp.route("/logout-refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def logout_refresh():
+    """登出 refresh token - 將 refresh token 加入黑名單"""
+    try:
+        jwt_data = get_jwt()
+        jti = jwt_data["jti"]  # JWT ID
+        exp = jwt_data["exp"]  # 過期時間
+
+        # 添加到黑名單，標記為refresh token
+        token_blacklist.add_token(jti, exp, "refresh")
+        return jsonify({"message": "Refresh token 已撤銷"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@auth_bp.route("/logout-all", methods=["POST"])
+@jwt_required()
+def logout_all():
+    """登出所有token - 將access token和對應的refresh token都加入黑名單"""
+    try:
+        jwt_data = get_jwt()
+        jti = jwt_data["jti"]
+        exp = jwt_data["exp"]
+
+        # 添加當前access token到黑名單
+        token_blacklist.add_token(jti, exp, "access")
+
+        # 注意：這裡我們只能撤銷當前的access token
+        # 要撤銷對應的refresh token，需要額外的邏輯來追蹤token關係
+
+        return jsonify({"message": "成功登出當前token"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@auth_bp.route("/token-status", methods=["GET"])
+@jwt_required()
+def token_status():
+    """檢查黑名單狀態（僅管理員可用）"""
+    try:
+        # 檢查是否為管理員
+        current_user_id = get_jwt_identity()
+        user = User.query.get(int(current_user_id))
+
+        if not user or user.role != "admin":
+            return jsonify({"error": "權限不足"}), 403
+
+        # 清理過期token並獲取統計信息
+        cleaned_count = token_blacklist.cleanup_expired_tokens()
+        stats = token_blacklist.get_blacklist_stats()
+
+        return (
+            jsonify(
+                {
+                    "blacklist_stats": stats,
+                    "cleaned_expired_tokens": cleaned_count,
+                    "message": "黑名單狀態更新完成",
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
