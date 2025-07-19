@@ -29,7 +29,7 @@ async function fetchCourses() {
     loading.value = true;
     error.value = "";
     try {
-        const response = await axios.get("/api/courses");
+        const response = await axios.get("/api/course/courseinfo");
 
         if (response.data.success) {
             //如果response有成功拉到資料(response.data.success = true)
