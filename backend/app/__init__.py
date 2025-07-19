@@ -1,10 +1,15 @@
 from flask import Flask
 from app.extensions import db, migrate, jwt, cors
-from app.routes.auth_routes import auth_bp
+from app.routes import register_routes
+from .config import Config
+from app.models import User, Teacher, Student, Course
+from app.utils.token_blacklist import token_blacklist
+from app.utils.token_scheduler import cleanup_scheduler
+
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object("app.config.DevConfig")
+    app.config.from_object(Config)
 
     # 初始化 extensions
     db.init_app(app)
@@ -12,7 +17,33 @@ def create_app():
     jwt.init_app(app)
     cors.init_app(app)
 
-    # 註冊藍圖
-    app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    # 導入所有 models（在 app context 中）
+
+
+    # 啟動token清理調度器（僅在非測試環境）
+    if app.config.get("ENV") != "testing":
+        cleanup_scheduler.start()
+
+    # JWT 黑名單檢查
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        jti = jwt_payload["jti"]
+        return token_blacklist.is_token_revoked(jti)
+
+    # JWT錯誤處理
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        return {"message": "Token已被撤銷，請重新登入"}, 401
+
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        token_type = jwt_payload.get("type", "access")
+        return {
+            "message": f"{token_type.capitalize()} token已過期",
+            "error": "token_expired",
+        }, 401
+
+    # 註冊所有路由
+    register_routes(app)
 
     return app
