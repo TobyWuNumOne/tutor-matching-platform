@@ -2,7 +2,7 @@ from flask import Flask
 from app.extensions import db, migrate, jwt, cors
 from app.routes import register_routes
 from .config import Config
-from app.models import User, Teacher, Student
+from app.models import User, Teacher, Student, Course
 from app.utils.token_blacklist import token_blacklist
 from app.utils.token_scheduler import cleanup_scheduler
 
@@ -16,6 +16,9 @@ def create_app():
     migrate.init_app(app, db)
     jwt.init_app(app)
     cors.init_app(app)
+
+    # 導入所有 models（在 app context 中）
+
 
     # 啟動token清理調度器（僅在非測試環境）
     if app.config.get("ENV") != "testing":
