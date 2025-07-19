@@ -1,4 +1,5 @@
 from flask import Flask
+from flasgger import Swagger
 from app.extensions import db, migrate, jwt, cors
 from app.routes import register_routes
 from .config import Config
@@ -17,7 +18,24 @@ def create_app():
     jwt.init_app(app)
     cors.init_app(app)
 
-    # 導入所有 models（在 app context 中）
+    # 初始化 Swagger
+    swagger_config = {
+        "headers": [],
+        "specs": [
+            {
+                "endpoint": 'apispec',
+                "route": '/apispec.json',
+                "rule_filter": lambda rule: True,
+                "model_filter": lambda tag: True,
+            }
+        ],
+        "static_url_path": "/flasgger_static",
+        "swagger_ui": True,
+        "specs_route": "/docs/"  # Swagger UI 路徑
+    }
+    
+    swagger = Swagger(app, config=swagger_config)
+    
 
 
     # 啟動token清理調度器（僅在非測試環境）
