@@ -11,7 +11,7 @@ class Student(BaseModel):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     # 關聯
-    user = db.relationship("User", backref="student_profile")
+    user = db.relationship("User", back_populates="student_profile")
 
     def __repr__(self):
         return f"<Student {self.email}>"

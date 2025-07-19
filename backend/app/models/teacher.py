@@ -20,7 +20,7 @@ class Teacher(BaseModel):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     # 關聯
-    user = db.relationship("User", backref="teacher_profile")
+    user = db.relationship("User", back_populates="teacher_profile")
     courses = db.relationship("Course", back_populates="teacher")
 
     def __repr__(self):
