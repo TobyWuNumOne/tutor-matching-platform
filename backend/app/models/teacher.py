@@ -21,6 +21,7 @@ class Teacher(BaseModel):
 
     # 關聯
     user = db.relationship("User", backref="teacher_profile")
+    courses = db.relationship("Course", back_populates="teacher")
 
     def __repr__(self):
         return f"<Teacher {self.name}>"
