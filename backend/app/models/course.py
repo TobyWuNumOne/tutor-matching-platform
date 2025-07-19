@@ -11,7 +11,7 @@ class Course(BaseModel):
     avg_rating= db.Column(db.Float, nullable=True)
 
     # 關聯
-    teacher = db.relationship("Teacher", backref="courses")
+    teacher = db.relationship("Teacher", back_populates="courses")
 
     def __repr__(self):
         return f"<Course {self.subject}>"
