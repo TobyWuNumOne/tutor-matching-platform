@@ -1,38 +1,65 @@
 <script setup>
-import { ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
+import axios from "axios";
 
 // 資料
 const CourseCategories = ["國文", "英文", "數學", "社會", "自然", "日文"];
-const Rating = ["5顆星", "4顆星", "3顆星", "2顆星", "1顆星"];
+const Rating = [
+    { text: "5顆星", value: 5 },
+    { text: "4顆星", value: 4 },
+    { text: "3顆星", value: 3 },
+    { text: "2顆星", value: 2 },
+    { text: "1顆星", value: 1 },
+];
 
 const selectedCategory = ref("");
 const selectedRating = ref("");
 const login = ref(true); // 預設為未登入，可切換成 true 模擬登入成功
 const router = useRouter();
 
-// 假老師資料
-const Teachers = [
-    { name: "老師A", rating: 5, subject: "國文" },
-    { name: "老師B", rating: 4, subject: "英文" },
-    { name: "老師C", rating: 3, subject: "數學" },
-    { name: "老師D", rating: 2, subject: "社會" },
-    { name: "老師E", rating: 1, subject: "自然" },
-    { name: "老師F", rating: 5, subject: "日文" },
-    { name: "老師G", rating: 4, subject: "國文" },
-    { name: "老師H", rating: 3, subject: "英文" },
-    { name: "老師I", rating: 2, subject: "數學" },
-    { name: "老師J", rating: 1, subject: "社會" },
-    { name: "老師K", rating: 5, subject: "自然" },
-    { name: "老師L", rating: 4, subject: "日文" },
-    { name: "老師M", rating: 3, subject: "國文" },
-    { name: "老師N", rating: 2, subject: "英文" },
-    { name: "老師O", rating: 1, subject: "數學" },
-    { name: "老師P", rating: 5, subject: "社會" },
-];
+// 取得資料庫中的Courses、Teacher表格資料用來填入課程卡片
+const courses = ref([]);
+const loading = ref(false); //用來表示載入狀態(後面有需要可以用來顯示spinner)
+const error = ref("");
+//獲取課程資料
+async function fetchCourses() {
+    loading.value = true;
+    error.value = "";
+    try {
+        const response = await axios.get("/api/courses");
 
+        if (response.data.success) {
+            //如果response有成功拉到資料(response.data.success = true)
+            courses.value = response.data.data;
+        } else {
+            error.value = response.data.error
+                ? response.data.error
+                : "資料拉取失敗";
+            //如果後端api有回傳error的話顯示error，沒有的話顯示"資料拉取失敗"
+        }
+    } catch (err) {
+        error.value = "無法連線伺服器";
+        console.error("拉取資料錯誤:", err); //debug用
+    } finally {
+        loading.value = false;
+    }
+}
+
+//篩選課程資料
+const filteredCourses = computed(() => {
+    return courses.value.filter((course) => {
+        const categoryMatch = selectedCategory.value
+            ? course.subject === selectedCategory.value
+            : true; //沒選擇的科目的話，每次回圈的categoryMatch都是true(不會被過濾掉)
+        const ratingMatch = selectedRating.value
+            ? course.avg_rating >= selectedRating.value
+            : true; //沒選擇的分數的話，每次回圈的ratingMatch都是true(不會被過濾掉)
+        return categoryMatch && ratingMatch;
+    });
+});
 // 控制哪個 modal 被打開
 const activeModalIndex = ref(null);
 
@@ -46,6 +73,14 @@ function closeModal() {
 function goToTeacherInfo(teacherName) {
     router.push(`/teacher/${encodeURIComponent(teacherName)}`);
 }
+// 星星評分顯示
+const getStars = (rating) => {
+    return Math.round(rating ? rating : 0);
+};
+
+onMounted(() => {
+    fetchCourses();
+});
 </script>
 
 <template>
@@ -66,8 +101,12 @@ function goToTeacherInfo(teacherName) {
 
             <select v-model="selectedRating" class="select-style">
                 <option disabled value="">請選擇評價</option>
-                <option v-for="(star, i) in Rating" :key="i" :value="star">
-                    {{ star }}
+                <option
+                    v-for="(star, i) in Rating"
+                    :key="i"
+                    :value="star.value"
+                >
+                    {{ star.text }}
                 </option>
             </select>
 
@@ -82,29 +121,32 @@ function goToTeacherInfo(teacherName) {
             class="flex-1 p-6 bg-gray-100 grid grid-cols-2 gap-4 sm:grid-cols-4 overflow-x-auto"
         >
             <div
-                v-for="(teacher, index) in Teachers"
-                :key="index"
+                v-for="(course, index) in filteredCourses"
+                :key="course.id"
                 class="bg-white rounded-xl shadow-md p-4 flex flex-col items-center min-w-[200px] hover:shadow-lg transition relative"
             >
                 <!-- 將點擊事件限制在這個div -->
                 <div
                     class="w-full flex flex-col items-center cursor-pointer"
-                    @click="goToTeacherInfo(teacher.name)"
+                    @click="goToTeacherInfo(course.teacher_name)"
                 >
                     <img
-                        :src="`https://source.unsplash.com/random/200x200?sig=${index}`"
+                        :src="
+                            course.avatar ||
+                            `https://source.unsplash.com/random/200x200?sig=${index}`
+                        "
                         alt="老師照片"
                         class="w-32 h-32 rounded-full object-cover mb-4"
                     />
                     <div class="font-bold text-xl mb-2 text-center">
-                        {{ teacher.name }}
+                        {{ course.teacher_name }}
                     </div>
                     <p class="text-gray-700 mb-3 text-center">
-                        我教學的是 {{ teacher.subject }}，歡迎找我學習。
+                        我教學的是 {{ course.subject }}，歡迎找我學習。
                     </p>
                     <div class="flex space-x-1 mb-4">
                         <img
-                            v-for="starIndex in teacher.rating"
+                            v-for="starIndex in getStars(course.avg_rating)"
                             :key="starIndex + '-' + index"
                             src="../assets/star_icon.png"
                             alt="star"
@@ -128,7 +170,7 @@ function goToTeacherInfo(teacherName) {
                             ✕
                         </button>
                         <h2 class="text-xl font-bold mb-4">
-                            預約：{{ teacher.name }}
+                            預約：{{ course.teacher_name }}
                         </h2>
                         <p class="mb-4 text-gray-600">您可以選擇以下動作：</p>
                         <button class="btn-primary">確認預約</button>

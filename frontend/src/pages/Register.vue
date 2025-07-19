@@ -74,11 +74,13 @@
 <template>
     <div
         class="flex flex-col items-center justify-center bg-gray-100 relative pt-20"
+        class="flex flex-col items-center justify-center bg-gray-100 relative pt-20"
     >
         <!-- 註冊卡片 -->
         <div
             class="bg-white shadow-lg rounded-lg p-8 w-[90%] max-w-md space-y-6"
         >
+            <form class="space-y-4" @submit.prevent="handleSubmit">
             <form class="space-y-4" @submit.prevent="handleSubmit">
                 <div class="text-center space-y-1">
                     <p class="text-xl font-semibold">立即加入我們</p>
@@ -91,6 +93,7 @@
                     <input
                         type="text"
                         v-model="name"
+                        v-model="name"
                         required
                         class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -99,6 +102,7 @@
                     <input
                         type="email"
                         v-model="email"
+                        v-model="email"
                         required
                         class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -106,6 +110,7 @@
                     <label class="text-sm font-medium">性別</label>
                     <select
                         id="underline_select"
+                        v-model="gender"
                         v-model="gender"
                         required
                         class="block py-2.5 px-3 w-full text-sm text-gray-500 bg-transparent border-0 border-b-2 border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-gray-200 peer"
@@ -118,6 +123,18 @@
                     </select>
                     <!-- 年紀欄位 -->
                     <label class="text-sm font-medium">年齡</label>
+                    <div class="relative">
+                        <input
+                            type="number"
+                            v-model="age"
+                            required
+                            class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p v-if="ageError" class="text-red-500 text-sm">
+                            {{ ageError }}
+                        </p>
+                    </div>
+
                     <div class="relative">
                         <input
                             type="number"
