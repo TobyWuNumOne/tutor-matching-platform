@@ -24,9 +24,6 @@ def get_courses_with_teacher_details():
         teacher_name = request.args.get('teacher_name')
         if teacher_name:
             query = query.join(Teacher).filter(Teacher.name.ilike(f'%{teacher_name}%'))
-        avatar = request.args.get('avatar')
-        if avatar:
-            query = query.join(Teacher).filter(Teacher.avatar.ilike(f'%{avatar}%'))
         
         courses = query.all()
         
