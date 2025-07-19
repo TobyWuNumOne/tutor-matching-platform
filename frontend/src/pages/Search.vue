@@ -131,7 +131,12 @@ function goToTeacherInfo(teacherName) {
                             預約：{{ teacher.name }}
                         </h2>
                         <p class="mb-4 text-gray-600">您可以選擇以下動作：</p>
-                        <button class="btn-primary">確認預約</button>
+                        <button
+                            class="btn-primary"
+                            @click="router.push('/booking')"
+                        >
+                            確認預約
+                        </button>
                         <button class="btn-secondary">發送訊息</button>
                         <button class="btn-danger" @click="closeModal">
                             取消
