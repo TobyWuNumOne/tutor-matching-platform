@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
 from flasgger import swag_from
+from marshmallow import ValidationError
 from app.models.student import Student
 from app.models.user import User
+from app.schemas.student_schema import StudentSchema, StudentCreateSchema, StudentUpdateSchema
 from app.extensions import db
 
 student_bp = Blueprint('students', __name__)
@@ -122,40 +124,9 @@ def create_student():
     新增學生資料
     """
     try:
-        # 獲取請求資料
-        data = request.get_json()
-        
-        # 驗證必填欄位
-        required_fields = ['user_id', 'email']
-        errors = {}
-        
-        for field in required_fields:
-            if not data or field not in data or not data[field]:
-                if field not in errors:
-                    errors[field] = []
-                
-                field_names = {
-                    'user_id': '使用者ID',
-                    'email': '電子郵件'
-                }
-                errors[field].append(f'{field_names[field]}不能為空')
-        
-        # 驗證電子郵件格式
-        if data and 'email' in data and data['email']:
-            import re
-            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-            if not re.match(email_pattern, data['email']):
-                if 'email' not in errors:
-                    errors['email'] = []
-                errors['email'].append('電子郵件格式錯誤')
-        
-        # 如果有驗證錯誤，回傳錯誤訊息
-        if errors:
-            return jsonify({
-                'success': False,
-                'message': '必填欄位不能為空',
-                'errors': errors
-            }), 400
+        # 使用 Schema 驗證輸入資料
+        schema = StudentCreateSchema()
+        data = schema.load(request.json)
         
         # 檢查使用者是否存在
         user = User.query.get(data['user_id'])
@@ -174,32 +145,26 @@ def create_student():
             }), 409
         
         # 建立新學生資料
-        new_student = Student(
-            user_id=data['user_id'],
-            email=data['email'],
-            gender=data.get('gender', ''),
-            age=data.get('age', '')
-        )
+        new_student = Student(**data)
         
         # 儲存到資料庫
         db.session.add(new_student)
         db.session.commit()
         
-        # 回傳新建立的學生資料
+        # 使用 Schema 序列化輸出
+        result_schema = StudentSchema()
         return jsonify({
             'success': True,
             'message': '學生資料新增成功',
-            'data': {
-                'id': new_student.id,
-                'user_id': new_student.user_id,
-                'email': new_student.email,
-                'gender': new_student.gender,
-                'age': new_student.age,
-                'created_at': new_student.created_at.isoformat() if new_student.created_at else None,
-                'updated_at': new_student.updated_at.isoformat() if new_student.updated_at else None
-            }
+            'data': result_schema.dump(new_student)
         }), 201
         
+    except ValidationError as err:
+        return jsonify({
+            'success': False,
+            'message': '輸入資料驗證失敗',
+            'errors': err.messages
+        }), 400
     except Exception as e:
         # 如果發生錯誤，回滾交易
         db.session.rollback()

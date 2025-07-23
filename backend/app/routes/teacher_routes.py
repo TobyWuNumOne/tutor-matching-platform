@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
 from flasgger import swag_from
+from marshmallow import ValidationError
 from app.models.teacher import Teacher
 from app.models.user import User
 from app.extensions import db
+from app.schemas.teacher_schema import TeacherSchema, TeacherCreateSchema, TeacherUpdateSchema
 
 teacher_bp = Blueprint('teachers', __name__)
 
@@ -178,45 +180,9 @@ def create_teacher():
     新增老師資料
     """
     try:
-        # 獲取請求資料
-        data = request.get_json()
-        
-        # 驗證必填欄位
-        required_fields = ['user_id', 'name', 'email', 'education', 'certifications', 'intro', 'teaching_experience']
-        errors = {}
-        
-        for field in required_fields:
-            if not data or field not in data or not data[field]:
-                if field not in errors:
-                    errors[field] = []
-                
-                field_names = {
-                    'user_id': '使用者ID',
-                    'name': '老師姓名',
-                    'email': '電子郵件',
-                    'education': '學歷',
-                    'certifications': '證照與認證',
-                    'intro': '自我介紹',
-                    'teaching_experience': '教學經驗'
-                }
-                errors[field].append(f'{field_names[field]}不能為空')
-        
-        # 驗證電子郵件格式
-        if data and 'email' in data and data['email']:
-            import re
-            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-            if not re.match(email_pattern, data['email']):
-                if 'email' not in errors:
-                    errors['email'] = []
-                errors['email'].append('電子郵件格式錯誤')
-        
-        # 如果有驗證錯誤，回傳錯誤訊息
-        if errors:
-            return jsonify({
-                'success': False,
-                'message': '必填欄位不能為空',
-                'errors': errors
-            }), 400
+        # 使用 Schema 驗證輸入資料
+        schema = TeacherCreateSchema()
+        data = schema.load(request.json)
         
         # 檢查使用者是否存在
         user = User.query.get(data['user_id'])
@@ -235,50 +201,26 @@ def create_teacher():
             }), 409
         
         # 建立新老師資料
-        new_teacher = Teacher(
-            user_id=data['user_id'],
-            avatar=data.get('avatar', ''),
-            name=data['name'],
-            email=data['email'],
-            phone=data.get('phone', ''),
-            gender=data.get('gender', ''),
-            age=data.get('age', ''),
-            education=data['education'],
-            certifications=data['certifications'],
-            intro=data['intro'],
-            teaching_experience=data['teaching_experience'],
-            status=data.get('status', 'active'),
-            blue_premium=data.get('blue_premium', False)
-        )
+        new_teacher = Teacher(**data)
         
         # 儲存到資料庫
         db.session.add(new_teacher)
         db.session.commit()
         
-        # 回傳新建立的老師資料
+        # 使用 Schema 序列化輸出
+        result_schema = TeacherSchema()
         return jsonify({
             'success': True,
             'message': '老師資料新增成功',
-            'data': {
-                'id': new_teacher.id,
-                'user_id': new_teacher.user_id,
-                'avatar': new_teacher.avatar,
-                'name': new_teacher.name,
-                'email': new_teacher.email,
-                'phone': new_teacher.phone,
-                'gender': new_teacher.gender,
-                'age': new_teacher.age,
-                'education': new_teacher.education,
-                'certifications': new_teacher.certifications,
-                'intro': new_teacher.intro,
-                'teaching_experience': new_teacher.teaching_experience,
-                'status': new_teacher.status,
-                'blue_premium': new_teacher.blue_premium,
-                'created_at': new_teacher.created_at.isoformat() if new_teacher.created_at else None,
-                'updated_at': new_teacher.updated_at.isoformat() if new_teacher.updated_at else None
-            }
+            'data': result_schema.dump(new_teacher)
         }), 201
         
+    except ValidationError as err:
+        return jsonify({
+            'success': False,
+            'message': '輸入資料驗證失敗',
+            'errors': err.messages
+        }), 400
     except Exception as e:
         # 如果發生錯誤，回滾交易
         db.session.rollback()
@@ -387,45 +329,11 @@ def get_teacher_by_name(teacher_name):
                 'message': '找不到指定的老師'
             }), 404
         
-        # 組建課程資訊
-        courses_data = []
-        if hasattr(teacher, 'courses'):
-            for course in teacher.courses:
-                course_data = {
-                    'id': course.id,
-                    'subject': course.subject,
-                    'description': course.description,
-                    'price': float(course.price) if course.price else None,
-                    'location': course.location,
-                    'avg_rating': course.avg_rating,
-                    'created_at': course.created_at.isoformat() if course.created_at else None
-                }
-                courses_data.append(course_data)
-        
-        # 組建回應資料
-        teacher_data = {
-            'id': teacher.id,
-            'user_id': teacher.user_id,
-            'avatar': teacher.avatar,
-            'name': teacher.name,
-            'email': teacher.email,
-            'phone': teacher.phone,
-            'gender': teacher.gender,
-            'age': teacher.age,
-            'education': teacher.education,
-            'certifications': teacher.certifications,
-            'intro': teacher.intro,
-            'teaching_experience': teacher.teaching_experience,
-            'status': teacher.status,
-            'blue_premium': teacher.blue_premium,
-            'courses': courses_data,
-            'created_at': teacher.created_at.isoformat() if teacher.created_at else None,
-            'updated_at': teacher.updated_at.isoformat() if teacher.updated_at else None
-        }
-        
+        # 使用 Schema 序列化輸出
+        schema = TeacherSchema()
         return jsonify({
             'success': True,
-            'data': teacher_data
+            'data': schema.dump(teacher)
         }), 200
         
     except Exception as e:
