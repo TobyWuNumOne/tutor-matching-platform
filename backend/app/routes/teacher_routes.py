@@ -286,3 +286,150 @@ def create_teacher():
             'success': False,
             'message': f'老師資料新增失敗: {str(e)}'
         }), 500
+
+@teacher_bp.route('/name/<string:teacher_name>', methods=['GET'])
+@swag_from({
+    'tags': ['老師管理'],
+    'summary': '根據老師姓名獲取詳細資訊',
+    'description': '根據老師姓名獲取詳細資訊，包含相關課程',
+    'parameters': [
+        {
+            'name': 'teacher_name',
+            'in': 'path',
+            'type': 'string',
+            'required': True,
+            'description': '老師姓名',
+            'example': '張老師'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': '成功獲取老師詳細資訊',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': True},
+                    'data': {
+                        'type': 'object',
+                        'properties': {
+                            'id': {'type': 'integer', 'example': 1},
+                            'user_id': {'type': 'integer', 'example': 1},
+                            'avatar': {'type': 'string', 'example': 'https://example.com/avatar.jpg'},
+                            'name': {'type': 'string', 'example': '張老師'},
+                            'email': {'type': 'string', 'example': 'teacher@example.com'},
+                            'phone': {'type': 'string', 'example': '0912345678'},
+                            'gender': {'type': 'string', 'example': '女'},
+                            'age': {'type': 'string', 'example': '30'},
+                            'education': {'type': 'string', 'example': '台灣大學數學系碩士'},
+                            'certifications': {'type': 'string', 'example': '中等學校數學科教師證'},
+                            'intro': {'type': 'string', 'example': '我是張老師，擁有10年數學教學經驗'},
+                            'teaching_experience': {'type': 'string', 'example': '曾任建中數學老師5年'},
+                            'status': {'type': 'string', 'example': 'active'},
+                            'blue_premium': {'type': 'boolean', 'example': False},
+                            'courses': {
+                                'type': 'array',
+                                'items': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'id': {'type': 'integer', 'example': 1},
+                                        'subject': {'type': 'string', 'example': '數學'},
+                                        'description': {'type': 'string', 'example': '高中數學課程'},
+                                        'price': {'type': 'number', 'example': 800.0},
+                                        'location': {'type': 'string', 'example': '台北'},
+                                        'avg_rating': {'type': 'number', 'example': 4.5}
+                                    }
+                                }
+                            },
+                            'created_at': {'type': 'string', 'example': '2024-01-01T10:00:00'}
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            'description': '老師不存在',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': False},
+                    'message': {'type': 'string', 'example': '找不到指定的老師'}
+                }
+            }
+        },
+        500: {
+            'description': '伺服器錯誤',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': False},
+                    'message': {'type': 'string', 'example': '獲取老師資訊失敗'}
+                }
+            }
+        }
+    }
+})
+def get_teacher_by_name(teacher_name):
+    """
+    根據老師姓名獲取詳細資訊
+    """
+    try:
+        # URL decode 處理中文名稱
+        from urllib.parse import unquote
+        decoded_name = unquote(teacher_name)
+        
+        # 查詢老師資訊，包含關聯的課程
+        from sqlalchemy.orm import joinedload
+        teacher = Teacher.query.options(joinedload(Teacher.courses)).filter_by(name=decoded_name).first()
+        
+        if not teacher:
+            return jsonify({
+                'success': False,
+                'message': '找不到指定的老師'
+            }), 404
+        
+        # 組建課程資訊
+        courses_data = []
+        if hasattr(teacher, 'courses'):
+            for course in teacher.courses:
+                course_data = {
+                    'id': course.id,
+                    'subject': course.subject,
+                    'description': course.description,
+                    'price': float(course.price) if course.price else None,
+                    'location': course.location,
+                    'avg_rating': course.avg_rating,
+                    'created_at': course.created_at.isoformat() if course.created_at else None
+                }
+                courses_data.append(course_data)
+        
+        # 組建回應資料
+        teacher_data = {
+            'id': teacher.id,
+            'user_id': teacher.user_id,
+            'avatar': teacher.avatar,
+            'name': teacher.name,
+            'email': teacher.email,
+            'phone': teacher.phone,
+            'gender': teacher.gender,
+            'age': teacher.age,
+            'education': teacher.education,
+            'certifications': teacher.certifications,
+            'intro': teacher.intro,
+            'teaching_experience': teacher.teaching_experience,
+            'status': teacher.status,
+            'blue_premium': teacher.blue_premium,
+            'courses': courses_data,
+            'created_at': teacher.created_at.isoformat() if teacher.created_at else None,
+            'updated_at': teacher.updated_at.isoformat() if teacher.updated_at else None
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': teacher_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'獲取老師資訊失敗: {str(e)}'
+        }), 500
