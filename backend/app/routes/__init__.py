@@ -4,6 +4,7 @@ from .student_route import student_bp
 from .course_routes import course_bp
 from .teacher_routes import teacher_bp
 from .booking_routes import booking_bp
+from .review_routes import review_bp
 
 
 def register_routes(app):
@@ -13,3 +14,4 @@ def register_routes(app):
     app.register_blueprint(teacher_bp, url_prefix="/api/teacher")
     app.register_blueprint(booking_bp, url_prefix="/api/booking")
     app.register_blueprint(student_bp, url_prefix="/api/student")
+    app.register_blueprint(review_bp, url_prefix="/api/reviews")
