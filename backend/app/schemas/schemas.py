@@ -1,6 +1,6 @@
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from marshmallow import fields
-from app.models import User, Teacher, Student, Course#, Review, Booking
+from app.models import User, Teacher, Student, Course, Review, Booking
 
 
 class UserSchema(SQLAlchemyAutoSchema):
@@ -42,20 +42,20 @@ class CourseSchema(SQLAlchemyAutoSchema):
         """取得老師名稱"""
         return obj.teacher.name if obj.teacher else None
 
-# class ReviewSchema(SQLAlchemyAutoSchema):
-#     course = fields.Nested(CourseSchema)
+class ReviewSchema(SQLAlchemyAutoSchema):
+    course = fields.Nested(CourseSchema)
 
-#     class Meta:
-#         model = Review
-#         load_instance = True
-#         include_relationships = True
+    class Meta:
+        model = Review
+        load_instance = True
+        include_relationships = True
 
 
-# class BookingSchema(SQLAlchemyAutoSchema):
-#     course = fields.Nested(CourseSchema)
-#     student = fields.Nested(StudentSchema)
+class BookingSchema(SQLAlchemyAutoSchema):
+    course = fields.Nested(CourseSchema)
+    student = fields.Nested(StudentSchema)
 
-#     class Meta:
-#         model = Booking
-#         load_instance = True
-#         include_relationships = True
+    class Meta:
+        model = Booking
+        load_instance = True
+        include_relationships = True
