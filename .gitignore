@@ -57,3 +57,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#backend
+pyproject.toml
+uv.lock
