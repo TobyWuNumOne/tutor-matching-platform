@@ -9,11 +9,15 @@ class BookingCreateSchema(SQLAlchemyAutoSchema):
     course_id = fields.Integer(required=True, validate=validate.Range(min=1))
     student_id = fields.Integer(required=True, validate=validate.Range(min=1))
     schedule_date = fields.String(required=True, validate=validate.Length(min=1))
+    status = fields.String(
+        required=True,
+        validate=validate.OneOf(["pending", "confirmed", "completed", "cancelled"]),
+    )
 
     class Meta:
         model = Booking
         load_instance = True
-        fields = ("course_id", "student_id", "schedule_date")
+        fields = ("course_id", "student_id", "schedule_date", "status")
 
 
 class BookingUpdateSchema(SQLAlchemyAutoSchema):
