@@ -4,20 +4,19 @@ from app.models.review import Review
 from app.models.course import Course
 from app.models.booking import Booking
 from app.schemas.review_schema import (
-    ReviewSchema,
     ReviewCreateSchema,
     ReviewUpdateSchema,
+    ReviewResponseSchema,
 )
 from app.extensions import db
 from app.utils.auth_required import auth_required
 from marshmallow import ValidationError
 
 # 創建 schema 實例
-review_schema = ReviewSchema()
-reviews_schema = ReviewSchema(many=True)
 review_create_schema = ReviewCreateSchema()
 review_update_schema = ReviewUpdateSchema()
-
+review_response_schema = ReviewResponseSchema()
+review_response_schema_many = ReviewResponseSchema(many=True)
 
 review_bp = Blueprint("reviews", __name__)
 
@@ -79,27 +78,17 @@ review_bp = Blueprint("reviews", __name__)
                             "properties": {
                                 "id": {"type": "integer", "example": 1},
                                 "course_id": {"type": "integer", "example": 1},
+                                "student_id": {"type": "integer", "example": 1},
                                 "rating": {"type": "string", "example": "4.5"},
-                                "rating_float": {"type": "number", "example": 4.5},
                                 "comment": {
                                     "type": "string",
                                     "example": "老師教學很認真",
                                 },
-                                "course": {
-                                    "type": "object",
-                                    "properties": {
-                                        "id": {"type": "integer", "example": 1},
-                                        "subject": {
-                                            "type": "string",
-                                            "example": "數學",
-                                        },
-                                        "teacher_name": {
-                                            "type": "string",
-                                            "example": "張老師",
-                                        },
-                                    },
-                                },
                                 "created_at": {
+                                    "type": "string",
+                                    "example": "2024-07-24T10:00:00",
+                                },
+                                "updated_at": {
                                     "type": "string",
                                     "example": "2024-07-24T10:00:00",
                                 },
@@ -166,54 +155,43 @@ def create_review(current_user):
     創建課程評論
     """
     try:
-        # 獲取請求數據
-        data = request.get_json()
-
-        # 數據驗證
+        # 使用 schema 驗證資料
         try:
-            validated_data = review_create_schema.load(data)
+            validated_data = review_create_schema.load(request.json)
         except ValidationError as err:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "數據驗證失敗",
-                        "errors": err.messages,
-                    }
-                ),
-                400,
-            )
+            return jsonify({
+                "success": False,
+                "message": "數據驗證失敗",
+                "errors": err.messages,
+            }), 400
 
         # 檢查課程是否存在
         course = Course.query.get(validated_data["course_id"])
         if not course:
             return jsonify({"success": False, "message": "指定的課程不存在"}), 404
 
+        # 檢查用戶是否有學生資料
+        if not hasattr(current_user, "student") or not current_user.student:
+            return jsonify({"success": False, "message": "只有學生才能評論"}), 403
+
         # 檢查用戶是否有權限評論（必須是學生且完成了該課程的預約）
         completed_booking = Booking.query.filter_by(
             course_id=validated_data["course_id"],
-            student_id=(
-                current_user.student.id if hasattr(current_user, "student") else None
-            ),
+            student_id=current_user.student.id,
             status="completed",
         ).first()
 
         if not completed_booking:
-            return (
-                jsonify({"success": False, "message": "只有完成課程的學生才能評論"}),
-                403,
-            )
+            return jsonify({"success": False, "message": "只有完成課程的學生才能評論"}), 403
 
         # 檢查是否已經評論過
         existing_review = Review.query.filter_by(
-            course_id=validated_data["course_id"], student_id=current_user.student.id
+            course_id=validated_data["course_id"], 
+            student_id=current_user.student.id
         ).first()
 
         if existing_review:
-            return (
-                jsonify({"success": False, "message": "您已經對此課程進行過評論"}),
-                409,
-            )
+            return jsonify({"success": False, "message": "您已經對此課程進行過評論"}), 409
 
         # 創建新評論
         new_review = Review(
@@ -229,20 +207,18 @@ def create_review(current_user):
 
         # 重新查詢以獲取關聯數據
         review_with_relations = Review.query.options(
-            db.joinedload(Review.course).joinedload(Course.teacher)
+            db.joinedload(Review.course),
+            db.joinedload(Review.student)
         ).get(new_review.id)
 
-        # 返回創建的評論
-        return (
-            jsonify(
-                {
-                    "success": True,
-                    "message": "評論創建成功",
-                    "data": review_with_relations.to_dict_with_relations(),
-                }
-            ),
-            201,
-        )
+        # 使用 schema 序列化回應
+        response_data = review_response_schema.dump(review_with_relations)
+
+        return jsonify({
+            "success": True,
+            "message": "評論創建成功",
+            "data": response_data
+        }), 201
 
     except Exception as e:
         # 如果發生錯誤，回滾事務
@@ -296,7 +272,6 @@ def create_review(current_user):
                                 "properties": {
                                     "id": {"type": "integer", "example": 1},
                                     "rating": {"type": "string", "example": "4.5"},
-                                    "rating_float": {"type": "number", "example": 4.5},
                                     "comment": {
                                         "type": "string",
                                         "example": "老師教學很認真",
@@ -354,15 +329,19 @@ def get_course_reviews(course_id):
         page = request.args.get("page", 1, type=int)
         per_page = min(request.args.get("per_page", 10, type=int), 100)
 
-        # 查詢評論
+        # 查詢評論，包含關聯資料
         pagination = (
             Review.query.filter_by(course_id=course_id)
+            .options(
+                db.joinedload(Review.course),
+                db.joinedload(Review.student)
+            )
             .order_by(Review.created_at.desc())
             .paginate(page=page, per_page=per_page, error_out=False)
         )
 
-        # 序列化評論數據
-        reviews_data = reviews_schema.dump(pagination.items)
+        # 使用 schema 序列化評論數據
+        reviews_data = review_response_schema_many.dump(pagination.items)
 
         # 計算統計數據
         all_reviews = Review.query.filter_by(course_id=course_id).all()
@@ -370,34 +349,26 @@ def get_course_reviews(course_id):
         average_rating = 0
 
         if total_reviews > 0:
-            total_rating = sum(review.rating_float for review in all_reviews)
+            total_rating = sum(float(review.rating) for review in all_reviews)
             average_rating = round(total_rating / total_reviews, 1)
 
-        return (
-            jsonify(
-                {
-                    "success": True,
-                    "data": reviews_data,
-                    "pagination": {
-                        "page": page,
-                        "per_page": per_page,
-                        "total": pagination.total,
-                        "pages": pagination.pages,
-                    },
-                    "statistics": {
-                        "average_rating": average_rating,
-                        "total_reviews": total_reviews,
-                    },
-                }
-            ),
-            200,
-        )
+        return jsonify({
+            "success": True,
+            "data": reviews_data,
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": pagination.total,
+                "pages": pagination.pages,
+            },
+            "statistics": {
+                "average_rating": average_rating,
+                "total_reviews": total_reviews,
+            },
+        }), 200
 
     except Exception as e:
-        return (
-            jsonify({"success": False, "message": f"獲取評論列表失敗: {str(e)}"}),
-            500,
-        )
+        return jsonify({"success": False, "message": f"獲取評論列表失敗: {str(e)}"}), 500
 
 
 @review_bp.route("/<int:review_id>", methods=["GET"])
@@ -428,24 +399,9 @@ def get_course_reviews(course_id):
                             "properties": {
                                 "id": {"type": "integer", "example": 1},
                                 "rating": {"type": "string", "example": "4.5"},
-                                "rating_float": {"type": "number", "example": 4.5},
                                 "comment": {
                                     "type": "string",
                                     "example": "老師教學很認真",
-                                },
-                                "course": {
-                                    "type": "object",
-                                    "properties": {
-                                        "id": {"type": "integer", "example": 1},
-                                        "subject": {
-                                            "type": "string",
-                                            "example": "數學",
-                                        },
-                                        "teacher_name": {
-                                            "type": "string",
-                                            "example": "張老師",
-                                        },
-                                    },
                                 },
                                 "created_at": {
                                     "type": "string",
@@ -476,22 +432,20 @@ def get_review(review_id):
     try:
         # 查詢評論（包含關聯數據）
         review = Review.query.options(
-            db.joinedload(Review.course).joinedload(Course.teacher)
+            db.joinedload(Review.course),
+            db.joinedload(Review.student)
         ).get(review_id)
 
         if not review:
             return jsonify({"success": False, "message": "指定的評論不存在"}), 404
 
-        # 序列化數據
-        review_data = review_schema.dump(review)
+        # 使用 schema 序列化數據
+        review_data = review_response_schema.dump(review)
 
         return jsonify({"success": True, "data": review_data}), 200
 
     except Exception as e:
-        return (
-            jsonify({"success": False, "message": f"獲取評論詳情失敗: {str(e)}"}),
-            500,
-        )
+        return jsonify({"success": False, "message": f"獲取評論詳情失敗: {str(e)}"}), 500
 
 
 @review_bp.route("/<int:review_id>", methods=["PUT"])
@@ -608,52 +562,46 @@ def update_review(current_user, review_id):
         if not review:
             return jsonify({"success": False, "message": "指定的評論不存在"}), 404
 
+        # 檢查用戶是否有學生資料
+        if not hasattr(current_user, "student") or not current_user.student:
+            return jsonify({"success": False, "message": "只有學生才能更新評論"}), 403
+
         # 檢查權限（只能更新自己的評論）
         if review.student_id != current_user.student.id:
             return jsonify({"success": False, "message": "您只能更新自己的評論"}), 403
 
-        # 獲取請求數據
-        data = request.get_json()
-
-        # 數據驗證
+        # 使用 schema 驗證資料
         try:
-            validated_data = review_update_schema.load(data)
+            validated_data = review_update_schema.load(request.json, partial=True)
         except ValidationError as err:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "數據驗證失敗",
-                        "errors": err.messages,
-                    }
-                ),
-                400,
-            )
+            return jsonify({
+                "success": False,
+                "message": "數據驗證失敗",
+                "errors": err.messages,
+            }), 400
 
         # 更新評論
-        if "rating" in validated_data:
-            review.rating = validated_data["rating"]
-        if "comment" in validated_data:
-            review.comment = validated_data["comment"]
+        for key, value in validated_data.items():
+            if hasattr(review, key):
+                setattr(review, key, value)
 
         # 保存更改
         db.session.commit()
 
         # 重新查詢以獲取關聯數據
         updated_review = Review.query.options(
-            db.joinedload(Review.course).joinedload(Course.teacher)
+            db.joinedload(Review.course),
+            db.joinedload(Review.student)
         ).get(review_id)
 
-        return (
-            jsonify(
-                {
-                    "success": True,
-                    "message": "評論更新成功",
-                    "data": updated_review.to_dict_with_relations(),
-                }
-            ),
-            200,
-        )
+        # 使用 schema 序列化回應
+        response_data = review_response_schema.dump(updated_review)
+
+        return jsonify({
+            "success": True,
+            "message": "評論更新成功",
+            "data": response_data
+        }), 200
 
     except Exception as e:
         # 如果發生錯誤，回滾事務
@@ -732,6 +680,10 @@ def delete_review(current_user, review_id):
         review = Review.query.get(review_id)
         if not review:
             return jsonify({"success": False, "message": "指定的評論不存在"}), 404
+
+        # 檢查用戶是否有學生資料
+        if not hasattr(current_user, "student") or not current_user.student:
+            return jsonify({"success": False, "message": "只有學生才能刪除評論"}), 403
 
         # 檢查權限（只能刪除自己的評論）
         if review.student_id != current_user.student.id:

@@ -85,3 +85,33 @@ class ReviewUpdateSchema(SQLAlchemyAutoSchema):
         model = Review
         load_instance = True
         fields = ("rating", "comment")
+
+class ReviewResponseSchema(SQLAlchemyAutoSchema):
+    """用於回傳評論資料的 Schema"""
+    # 定義外鍵欄位
+    course_id = fields.Integer(dump_only=True)
+    student_id = fields.Integer(dump_only=True)
+
+    # 關聯資料
+    course_name = fields.Method("get_course_name")
+    student_name = fields.Method("get_student_name")
+    
+    def get_course_name(self, obj):
+        return obj.course.subject if obj.course else None
+    
+    def get_student_name(self, obj):
+        return obj.student.user.name if obj.student and obj.student.user else None
+
+    class Meta:
+        model = Review
+        fields = (
+            "id",
+            "course_id",
+            "student_id",
+            "rating",
+            "comment",
+            "created_at",
+            "updated_at",
+            "course_name",
+            "student_name"
+        )
