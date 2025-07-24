@@ -16,14 +16,11 @@ from .course_schema import (
     CourseCreateSchema,
     CourseUpdateSchema,
     CourseResponseSchema,
-    CourseDetailSchema,
-    CourseSearchSchema,
 )
 from .booking_schema import (
     BookingCreateSchema,
     BookingUpdateSchema,
     BookingResponseSchema,
-    BookingDetailSchema,
 )
 
 __all__ = [
@@ -44,10 +41,7 @@ __all__ = [
     "CourseCreateSchema",
     "CourseUpdateSchema",
     "CourseResponseSchema",
-    "CourseDetailSchema",
-    "CourseSearchSchema",
     "BookingCreateSchema",
     "BookingUpdateSchema",
     "BookingResponseSchema",
-    "BookingDetailSchema",
 ]

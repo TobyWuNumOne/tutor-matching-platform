@@ -31,7 +31,7 @@ class BookingUpdateSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = Booking
         load_instance = True
-        fields = ("status")
+        fields = ("status",)
 
 
 class BookingResponseSchema(SQLAlchemyAutoSchema):
