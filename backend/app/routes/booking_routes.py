@@ -1,13 +1,26 @@
 from flask import Blueprint, request, jsonify
 from flasgger import swag_from
+from marshmallow import ValidationError
+from datetime import datetime
 from app.models.booking import Booking
 from app.models.course import Course
 from app.models.student import Student
-from app.models.teacher import Teacher
+from app.schemas.booking_schema import (
+    BookingCreateSchema,
+    BookingUpdateSchema,
+    BookingResponseSchema,
+)
 from app.extensions import db
-from datetime import datetime
+from app.utils.auth_required import auth_required
+
+# 創建 schema 實例
+booking_create_schema = BookingCreateSchema()
+booking_update_schema = BookingUpdateSchema()
+booking_response_schema = BookingResponseSchema()
+booking_response_schema_many = BookingResponseSchema(many=True)
 
 booking_bp = Blueprint('bookings', __name__)
+
 
 @booking_bp.route('/create', methods=['POST'])
 @swag_from({
@@ -37,11 +50,6 @@ booking_bp = Blueprint('bookings', __name__)
                         'type': 'string',
                         'description': '預約時間（格式：YYYY-MM-DD HH:MM）',
                         'example': '2024-07-25 14:30'
-                    },
-                    'message': {
-                        'type': 'string',
-                        'description': '給老師的訊息（可選）',
-                        'example': '希望能加強數學基礎'
                     }
                 },
                 'required': ['course_id', 'student_id', 'schedule_date']
@@ -64,14 +72,6 @@ booking_bp = Blueprint('bookings', __name__)
                             'student_id': {'type': 'integer', 'example': 1},
                             'schedule_date': {'type': 'string', 'example': '2024-07-25 14:30'},
                             'status': {'type': 'string', 'example': 'pending'},
-                            'course': {
-                                'type': 'object',
-                                'properties': {
-                                    'subject': {'type': 'string', 'example': '數學'},
-                                    'teacher_name': {'type': 'string', 'example': '張老師'},
-                                    'price': {'type': 'number', 'example': 800.0}
-                                }
-                            },
                             'created_at': {'type': 'string', 'example': '2024-07-23T10:00:00'}
                         }
                     }
@@ -84,7 +84,7 @@ booking_bp = Blueprint('bookings', __name__)
                 'type': 'object',
                 'properties': {
                     'success': {'type': 'boolean', 'example': False},
-                    'message': {'type': 'string', 'example': '必填欄位不能為空'},
+                    'message': {'type': 'string', 'example': '資料驗證失敗'},
                     'errors': {
                         'type': 'object',
                         'example': {
@@ -118,47 +118,21 @@ booking_bp = Blueprint('bookings', __name__)
 })
 def create_booking():
     """
-    學生建立預約
+    建立新預約
     """
     try:
-        # 獲取請求資料
-        data = request.get_json()
-        
-        # 驗證必填欄位
-        required_fields = ['course_id', 'student_id', 'schedule_date']
-        errors = {}
-        
-        for field in required_fields:
-            if not data or field not in data or not data[field]:
-                if field not in errors:
-                    errors[field] = []
-                
-                field_names = {
-                    'course_id': '課程ID',
-                    'student_id': '學生ID',
-                    'schedule_date': '預約時間'
-                }
-                errors[field].append(f'{field_names[field]}不能為空')
-        
-        # 驗證時間格式
-        if data and 'schedule_date' in data and data['schedule_date']:
-            try:
-                datetime.strptime(data['schedule_date'], '%Y-%m-%d %H:%M')
-            except ValueError:
-                if 'schedule_date' not in errors:
-                    errors['schedule_date'] = []
-                errors['schedule_date'].append('預約時間格式錯誤，請使用 YYYY-MM-DD HH:MM 格式')
-        
-        # 如果有驗證錯誤，回傳錯誤訊息
-        if errors:
+        # 使用 schema 驗證資料
+        try:
+            validated_data = booking_create_schema.load(request.json)
+        except ValidationError as err:
             return jsonify({
                 'success': False,
-                'message': '必填欄位不能為空',
-                'errors': errors
+                'message': '資料驗證失敗',
+                'errors': err.messages
             }), 400
         
         # 檢查課程是否存在
-        course = Course.query.get(data['course_id'])
+        course = Course.query.get(validated_data['course_id'])
         if not course:
             return jsonify({
                 'success': False,
@@ -166,31 +140,31 @@ def create_booking():
             }), 404
         
         # 檢查學生是否存在
-        student = Student.query.get(data['student_id'])
+        student = Student.query.get(validated_data['student_id'])
         if not student:
             return jsonify({
                 'success': False,
                 'message': '指定的學生不存在'
             }), 404
         
-        # 檢查是否有時間衝突（同一個老師在同一時間的其他預約）
-        existing_booking = Booking.query.join(Course).filter(
-            Course.teacher_id == course.teacher_id,
-            Booking.schedule_date == data['schedule_date'],
-            Booking.status.in_(['pending', 'confirmed'])
+        # 檢查是否已有相同時間的預約（避免衝突）
+        existing_booking = Booking.query.filter_by(
+            course_id=validated_data['course_id'],
+            schedule_date=validated_data['schedule_date'],
+            status='confirmed'
         ).first()
         
         if existing_booking:
             return jsonify({
                 'success': False,
-                'message': '該時段已有其他預約，請選擇其他時間'
+                'message': '該時段已有其他預約'
             }), 409
         
         # 建立新預約
         new_booking = Booking(
-            course_id=data['course_id'],
-            student_id=data['student_id'],
-            schedule_date=data['schedule_date'],
+            course_id=validated_data['course_id'],
+            student_id=validated_data['student_id'],
+            schedule_date=validated_data['schedule_date'],
             status='pending'
         )
         
@@ -200,19 +174,20 @@ def create_booking():
         
         # 重新查詢以獲取關聯資料
         booking_with_relations = Booking.query.options(
-            db.joinedload(Booking.course).joinedload(Course.teacher),
+            db.joinedload(Booking.course),
             db.joinedload(Booking.student)
         ).get(new_booking.id)
         
-        # 回傳新建立的預約資料
+        # 使用 schema 序列化回應
+        response_data = booking_response_schema.dump(booking_with_relations)
+        
         return jsonify({
             'success': True,
             'message': '預約申請已送出',
-            'data': booking_with_relations.to_dict_with_relations()
+            'data': response_data
         }), 201
         
     except Exception as e:
-        # 如果發生錯誤，回滾交易
         db.session.rollback()
         return jsonify({
             'success': False,
@@ -220,20 +195,12 @@ def create_booking():
         }), 500
 
 
-@booking_bp.route('/student/<int:student_id>', methods=['GET'])
+@booking_bp.route('/list', methods=['GET'])
 @swag_from({
     'tags': ['預約管理'],
-    'summary': '獲取學生的預約列表',
-    'description': '獲取指定學生的所有預約記錄',
+    'summary': '獲取預約列表',
+    'description': '獲取預約列表，支援篩選',
     'parameters': [
-        {
-            'name': 'student_id',
-            'in': 'path',
-            'type': 'integer',
-            'required': True,
-            'description': '學生ID',
-            'example': 1
-        },
         {
             'name': 'status',
             'in': 'query',
@@ -242,6 +209,22 @@ def create_booking():
             'description': '預約狀態篩選',
             'enum': ['pending', 'confirmed', 'completed', 'cancelled'],
             'example': 'pending'
+        },
+        {
+            'name': 'course_id',
+            'in': 'query',
+            'type': 'integer',
+            'required': False,
+            'description': '課程ID篩選',
+            'example': 1
+        },
+        {
+            'name': 'student_id',
+            'in': 'query',
+            'type': 'integer',
+            'required': False,
+            'description': '學生ID篩選',
+            'example': 1
         },
         {
             'name': 'page',
@@ -262,7 +245,7 @@ def create_booking():
     ],
     'responses': {
         200: {
-            'description': '成功獲取學生預約列表',
+            'description': '成功獲取預約列表',
             'schema': {
                 'type': 'object',
                 'properties': {
@@ -274,16 +257,10 @@ def create_booking():
                             'properties': {
                                 'id': {'type': 'integer', 'example': 1},
                                 'course_id': {'type': 'integer', 'example': 1},
+                                'student_id': {'type': 'integer', 'example': 1},
                                 'schedule_date': {'type': 'string', 'example': '2024-07-25 14:30'},
                                 'status': {'type': 'string', 'example': 'pending'},
-                                'course': {
-                                    'type': 'object',
-                                    'properties': {
-                                        'subject': {'type': 'string', 'example': '數學'},
-                                        'teacher_name': {'type': 'string', 'example': '張老師'},
-                                        'price': {'type': 'number', 'example': 800.0}
-                                    }
-                                }
+                                'created_at': {'type': 'string', 'example': '2024-07-23T10:00:00'}
                             }
                         }
                     },
@@ -292,51 +269,42 @@ def create_booking():
                         'properties': {
                             'page': {'type': 'integer', 'example': 1},
                             'per_page': {'type': 'integer', 'example': 10},
-                            'total': {'type': 'integer', 'example': 15},
-                            'pages': {'type': 'integer', 'example': 2}
+                            'total': {'type': 'integer', 'example': 50},
+                            'pages': {'type': 'integer', 'example': 5}
                         }
                     }
-                }
-            }
-        },
-        404: {
-            'description': '學生不存在',
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'success': {'type': 'boolean', 'example': False},
-                    'message': {'type': 'string', 'example': '指定的學生不存在'}
                 }
             }
         }
     }
 })
-def get_student_bookings(student_id):
+def get_booking_list():
     """
-    獲取學生的預約列表
+    獲取預約列表
     """
     try:
-        # 檢查學生是否存在
-        student = Student.query.get(student_id)
-        if not student:
-            return jsonify({
-                'success': False,
-                'message': '指定的學生不存在'
-            }), 404
-        
         # 獲取查詢參數
-        status = request.args.get('status', '')
+        status = request.args.get('status')
+        course_id = request.args.get('course_id', type=int)
+        student_id = request.args.get('student_id', type=int)
         page = request.args.get('page', 1, type=int)
         per_page = min(request.args.get('per_page', 10, type=int), 100)
         
         # 建立查詢
-        query = Booking.query.filter_by(student_id=student_id).options(
-            db.joinedload(Booking.course).joinedload(Course.teacher)
+        query = Booking.query.options(
+            db.joinedload(Booking.course),
+            db.joinedload(Booking.student)
         )
         
-        # 狀態篩選
+        # 套用篩選條件
         if status:
             query = query.filter(Booking.status == status)
+        
+        if course_id:
+            query = query.filter(Booking.course_id == course_id)
+        
+        if student_id:
+            query = query.filter(Booking.student_id == student_id)
         
         # 按建立時間降序排列
         query = query.order_by(Booking.created_at.desc())
@@ -350,12 +318,12 @@ def get_student_bookings(student_id):
         
         bookings = pagination.items
         
-        # 組建回應資料
-        booking_list = [booking.to_dict_with_relations() for booking in bookings]
+        # 使用 schema 序列化資料
+        bookings_data = booking_response_schema_many.dump(bookings)
         
         return jsonify({
             'success': True,
-            'data': booking_list,
+            'data': bookings_data,
             'pagination': {
                 'page': pagination.page,
                 'per_page': pagination.per_page,
@@ -367,172 +335,15 @@ def get_student_bookings(student_id):
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'獲取學生預約失敗: {str(e)}'
+            'message': f'獲取預約列表失敗: {str(e)}'
         }), 500
 
 
-@booking_bp.route('/teacher/<int:teacher_id>', methods=['GET'])
+@booking_bp.route('/<int:booking_id>', methods=['GET'])
 @swag_from({
     'tags': ['預約管理'],
-    'summary': '獲取老師的預約列表',
-    'description': '獲取指定老師的所有預約記錄',
-    'parameters': [
-        {
-            'name': 'teacher_id',
-            'in': 'path',
-            'type': 'integer',
-            'required': True,
-            'description': '老師ID',
-            'example': 1
-        },
-        {
-            'name': 'status',
-            'in': 'query',
-            'type': 'string',
-            'required': False,
-            'description': '預約狀態篩選',
-            'enum': ['pending', 'confirmed', 'completed', 'cancelled'],
-            'example': 'pending'
-        },
-        {
-            'name': 'date_from',
-            'in': 'query',
-            'type': 'string',
-            'required': False,
-            'description': '開始日期（YYYY-MM-DD）',
-            'example': '2024-07-01'
-        },
-        {
-            'name': 'date_to',
-            'in': 'query',
-            'type': 'string',
-            'required': False,
-            'description': '結束日期（YYYY-MM-DD）',
-            'example': '2024-07-31'
-        }
-    ],
-    'responses': {
-        200: {
-            'description': '成功獲取老師預約列表',
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'success': {'type': 'boolean', 'example': True},
-                    'data': {
-                        'type': 'array',
-                        'items': {
-                            'type': 'object',
-                            'properties': {
-                                'id': {'type': 'integer', 'example': 1},
-                                'course_id': {'type': 'integer', 'example': 1},
-                                'schedule_date': {'type': 'string', 'example': '2024-07-25 14:30'},
-                                'status': {'type': 'string', 'example': 'pending'},
-                                'student': {
-                                    'type': 'object',
-                                    'properties': {
-                                        'name': {'type': 'string', 'example': '王同學'},
-                                        'email': {'type': 'string', 'example': 'student@example.com'}
-                                    }
-                                },
-                                'course': {
-                                    'type': 'object',
-                                    'properties': {
-                                        'subject': {'type': 'string', 'example': '數學'},
-                                        'price': {'type': 'number', 'example': 800.0}
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        404: {
-            'description': '老師不存在',
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'success': {'type': 'boolean', 'example': False},
-                    'message': {'type': 'string', 'example': '指定的老師不存在'}
-                }
-            }
-        }
-    }
-})
-def get_teacher_bookings(teacher_id):
-    """
-    獲取老師的預約列表
-    """
-    try:
-        # 檢查老師是否存在
-        teacher = Teacher.query.get(teacher_id)
-        if not teacher:
-            return jsonify({
-                'success': False,
-                'message': '指定的老師不存在'
-            }), 404
-        
-        # 獲取查詢參數
-        status = request.args.get('status', '')
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        
-        # 建立查詢 - 透過課程關聯找到老師的預約
-        query = Booking.query.join(Course).filter(
-            Course.teacher_id == teacher_id
-        ).options(
-            db.joinedload(Booking.course),
-            db.joinedload(Booking.student)
-        )
-        
-        # 狀態篩選
-        if status:
-            query = query.filter(Booking.status == status)
-        
-        # 日期範圍篩選
-        if date_from:
-            try:
-                date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
-                query = query.filter(Booking.schedule_date >= date_from)
-            except ValueError:
-                pass
-        
-        if date_to:
-            try:
-                date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
-                # 加一天以包含當天的所有時間
-                import datetime as dt
-                date_to_end = (date_to_obj + dt.timedelta(days=1)).strftime('%Y-%m-%d')
-                query = query.filter(Booking.schedule_date < date_to_end)
-            except ValueError:
-                pass
-        
-        # 按預約時間排序
-        query = query.order_by(Booking.schedule_date.asc())
-        
-        bookings = query.all()
-        
-        # 組建回應資料
-        booking_list = [booking.to_dict_with_relations() for booking in bookings]
-        
-        return jsonify({
-            'success': True,
-            'data': booking_list,
-            'total': len(booking_list)
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'獲取老師預約失敗: {str(e)}'
-        }), 500
-
-
-@booking_bp.route('/<int:booking_id>/status', methods=['PUT'])
-@swag_from({
-    'tags': ['預約管理'],
-    'summary': '更新預約狀態',
-    'description': '老師或學生更新預約狀態（確認、取消等）',
+    'summary': '獲取預約詳細資訊',
+    'description': '根據預約ID獲取詳細資訊',
     'parameters': [
         {
             'name': 'booking_id',
@@ -541,45 +352,24 @@ def get_teacher_bookings(teacher_id):
             'required': True,
             'description': '預約ID',
             'example': 1
-        },
-        {
-            'name': 'body',
-            'in': 'body',
-            'required': True,
-            'description': '狀態更新資訊',
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'status': {
-                        'type': 'string',
-                        'description': '新狀態',
-                        'enum': ['pending', 'confirmed', 'completed', 'cancelled'],
-                        'example': 'confirmed'
-                    },
-                    'reason': {
-                        'type': 'string',
-                        'description': '狀態變更原因（可選）',
-                        'example': '時間確認無誤，期待上課'
-                    }
-                },
-                'required': ['status']
-            }
         }
     ],
     'responses': {
         200: {
-            'description': '狀態更新成功',
+            'description': '成功獲取預約詳細資訊',
             'schema': {
                 'type': 'object',
                 'properties': {
                     'success': {'type': 'boolean', 'example': True},
-                    'message': {'type': 'string', 'example': '預約狀態已更新'},
                     'data': {
                         'type': 'object',
                         'properties': {
                             'id': {'type': 'integer', 'example': 1},
-                            'status': {'type': 'string', 'example': 'confirmed'},
-                            'updated_at': {'type': 'string', 'example': '2024-07-23T10:30:00'}
+                            'course_id': {'type': 'integer', 'example': 1},
+                            'student_id': {'type': 'integer', 'example': 1},
+                            'schedule_date': {'type': 'string', 'example': '2024-07-25 14:30'},
+                            'status': {'type': 'string', 'example': 'pending'},
+                            'created_at': {'type': 'string', 'example': '2024-07-23T10:00:00'}
                         }
                     }
                 }
@@ -597,7 +387,138 @@ def get_teacher_bookings(teacher_id):
         }
     }
 })
-def update_booking_status(booking_id):
+def get_booking_detail(booking_id):
+    """
+    獲取預約詳細資訊
+    """
+    try:
+        # 查詢預約資訊，包含關聯資料
+        booking = Booking.query.options(
+            db.joinedload(Booking.course),
+            db.joinedload(Booking.student)
+        ).get(booking_id)
+        
+        if not booking:
+            return jsonify({
+                'success': False,
+                'message': '找不到指定的預約'
+            }), 404
+        
+        # 使用 schema 序列化資料
+        booking_data = booking_response_schema.dump(booking)
+        
+        return jsonify({
+            'success': True,
+            'data': booking_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'獲取預約詳細資訊失敗: {str(e)}'
+        }), 500
+
+
+@booking_bp.route('/<int:booking_id>', methods=['PUT'])
+@auth_required
+@swag_from({
+    'tags': ['預約管理'],
+    'summary': '更新預約狀態',
+    'description': '老師或學生更新預約狀態',
+    'parameters': [
+        {
+            'name': 'Authorization',
+            'in': 'header',
+            'type': 'string',
+            'required': True,
+            'description': 'Bearer token',
+            'example': 'Bearer your_jwt_token_here'
+        },
+        {
+            'name': 'booking_id',
+            'in': 'path',
+            'type': 'integer',
+            'required': True,
+            'description': '預約ID',
+            'example': 1
+        },
+        {
+            'name': 'body',
+            'in': 'body',
+            'required': True,
+            'description': '要更新的預約資料',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'status': {
+                        'type': 'string',
+                        'description': '預約狀態',
+                        'enum': ['pending', 'confirmed', 'completed', 'cancelled'],
+                        'example': 'confirmed'
+                    },
+                    'reason': {
+                        'type': 'string',
+                        'description': '狀態變更原因（可選）',
+                        'example': '時間衝突'
+                    }
+                },
+                'required': ['status']
+            }
+        }
+    ],
+    'responses': {
+        200: {
+            'description': '預約更新成功',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': True},
+                    'message': {'type': 'string', 'example': '預約狀態更新成功'},
+                    'data': {
+                        'type': 'object',
+                        'properties': {
+                            'id': {'type': 'integer', 'example': 1},
+                            'status': {'type': 'string', 'example': 'confirmed'},
+                            'reason': {'type': 'string', 'example': '時間衝突'}
+                        }
+                    }
+                }
+            }
+        },
+        400: {
+            'description': '請求參數錯誤',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': False},
+                    'message': {'type': 'string', 'example': '資料驗證失敗'},
+                    'errors': {'type': 'object'}
+                }
+            }
+        },
+        403: {
+            'description': '沒有權限',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': False},
+                    'message': {'type': 'string', 'example': '您沒有權限修改此預約'}
+                }
+            }
+        },
+        404: {
+            'description': '預約不存在',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': False},
+                    'message': {'type': 'string', 'example': '找不到指定的預約'}
+                }
+            }
+        }
+    }
+})
+def update_booking(current_user, booking_id):
     """
     更新預約狀態
     """
@@ -610,40 +531,156 @@ def update_booking_status(booking_id):
                 'message': '找不到指定的預約'
             }), 404
         
-        # 獲取請求資料
-        data = request.get_json()
+        # 檢查權限（老師或學生可以更新相關的預約）
+        is_teacher = (hasattr(current_user, 'teacher') and 
+                     current_user.teacher and 
+                     booking.course.teacher_id == current_user.teacher.id)
+        is_student = (hasattr(current_user, 'student') and 
+                     current_user.student and 
+                     booking.student_id == current_user.student.id)
         
-        if not data or 'status' not in data:
+        if not (is_teacher or is_student):
             return jsonify({
                 'success': False,
-                'message': '缺少必要的狀態參數'
-            }), 400
+                'message': '您沒有權限修改此預約'
+            }), 403
         
-        # 驗證狀態值
-        valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled']
-        if data['status'] not in valid_statuses:
+        # 使用 schema 驗證資料
+        try:
+            validated_data = booking_update_schema.load(request.json, partial=True)
+        except ValidationError as err:
             return jsonify({
                 'success': False,
-                'message': f'無效的狀態值，可選值：{", ".join(valid_statuses)}'
+                'message': '資料驗證失敗',
+                'errors': err.messages
             }), 400
         
-        # 更新狀態
-        booking.status = data['status']
+        # 更新預約資料
+        for key, value in validated_data.items():
+            if hasattr(booking, key):
+                setattr(booking, key, value)
+        
         db.session.commit()
+        
+        # 重新查詢以獲取關聯資料
+        updated_booking = Booking.query.options(
+            db.joinedload(Booking.course),
+            db.joinedload(Booking.student)
+        ).get(booking_id)
+        
+        # 使用 schema 序列化回應
+        response_data = booking_response_schema.dump(updated_booking)
         
         return jsonify({
             'success': True,
-            'message': '預約狀態已更新',
-            'data': {
-                'id': booking.id,
-                'status': booking.status,
-                'updated_at': booking.updated_at.isoformat() if booking.updated_at else None
-            }
+            'message': '預約狀態更新成功',
+            'data': response_data
         }), 200
         
     except Exception as e:
         db.session.rollback()
         return jsonify({
             'success': False,
-            'message': f'狀態更新失敗: {str(e)}'
+            'message': f'預約更新失敗: {str(e)}'
+        }), 500
+
+
+@booking_bp.route('/<int:booking_id>', methods=['DELETE'])
+@auth_required
+@swag_from({
+    'tags': ['預約管理'],
+    'summary': '刪除預約',
+    'description': '刪除指定的預約',
+    'parameters': [
+        {
+            'name': 'Authorization',
+            'in': 'header',
+            'type': 'string',
+            'required': True,
+            'description': 'Bearer token',
+            'example': 'Bearer your_jwt_token_here'
+        },
+        {
+            'name': 'booking_id',
+            'in': 'path',
+            'type': 'integer',
+            'required': True,
+            'description': '預約ID',
+            'example': 1
+        }
+    ],
+    'responses': {
+        200: {
+            'description': '預約刪除成功',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': True},
+                    'message': {'type': 'string', 'example': '預約刪除成功'}
+                }
+            }
+        },
+        403: {
+            'description': '沒有權限',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': False},
+                    'message': {'type': 'string', 'example': '您沒有權限刪除此預約'}
+                }
+            }
+        },
+        404: {
+            'description': '預約不存在',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': False},
+                    'message': {'type': 'string', 'example': '找不到指定的預約'}
+                }
+            }
+        }
+    }
+})
+def delete_booking(current_user, booking_id):
+    """
+    刪除預約
+    """
+    try:
+        # 查詢預約
+        booking = Booking.query.get(booking_id)
+        if not booking:
+            return jsonify({
+                'success': False,
+                'message': '找不到指定的預約'
+            }), 404
+        
+        # 檢查權限（老師或學生可以刪除相關的預約）
+        is_teacher = (hasattr(current_user, 'teacher') and 
+                     current_user.teacher and 
+                     booking.course.teacher_id == current_user.teacher.id)
+        is_student = (hasattr(current_user, 'student') and 
+                     current_user.student and 
+                     booking.student_id == current_user.student.id)
+        
+        if not (is_teacher or is_student):
+            return jsonify({
+                'success': False,
+                'message': '您沒有權限刪除此預約'
+            }), 403
+        
+        # 刪除預約
+        db.session.delete(booking)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': '預約刪除成功'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'預約刪除失敗: {str(e)}'
         }), 500
