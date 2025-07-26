@@ -3,6 +3,7 @@ import { reactive } from "vue";
 import { useRoute } from "vue-router";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
+import BluePremium from "../components/Blue_Premium.vue";
 
 // 路由參數
 const route = useRoute();
@@ -22,9 +23,19 @@ const teacher = reactive({
     teaching_experience:
         "10年以上高中與成人英文教學經驗。\n曾任教於多間補習班及國際學校。",
     status: "在職",
-    blue_premium: true,
+    blue_premium: false,
     user_id: 1,
 });
+
+function purchasePremium() {
+    const confirmUpgrade = confirm("確定要升級為藍鑽會員嗎？費用 $199/月");
+
+    if (confirmUpgrade) {
+        // 模擬付費流程，實際上應呼叫後端 API
+        teacher.blue_premium = true;
+        alert("恭喜你已成為藍鑽會員！");
+    }
+}
 </script>
 
 <template>
@@ -45,12 +56,10 @@ const teacher = reactive({
                 <div>
                     <h1 class="text-2xl font-bold">{{ teacher.name }}</h1>
                     <p class="text-gray-500">{{ teacher.status }}</p>
-                    <span
-                        v-if="teacher.blue_premium"
-                        class="bg-blue-500 text-white text-sm px-2 py-1 rounded"
-                    >
-                        Premium
-                    </span>
+                    <BluePremium
+                        :isPremium="teacher.blue_premium"
+                        @upgrade="purchasePremium"
+                    />
                 </div>
             </div>
 
