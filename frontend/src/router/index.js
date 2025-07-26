@@ -9,6 +9,7 @@ import TeacherDashboard from "../pages/TeacherDashboard.vue";
 import TeacherInfoPage from "../pages/TeacherInfoPage.vue";
 import Booking from "../pages/Booking.vue";
 import CourseForm from "../pages/CourseForm.vue";
+import ReviewForm from "../pages/ReviewForm.vue";
 
 const routes = [
     {
@@ -50,6 +51,10 @@ const routes = [
     {
         path: "/courseform",
         component: CourseForm,
+    },
+    {
+        path: "/reviewform",
+        component: ReviewForm,
     },
 ];
 
