@@ -12,7 +12,7 @@ from ..ecpay_test import main
 #     import sys
 #     import os
 #     sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-#     from payment import ecpay, order_search  # 使用您現有的函數
+    # from payment import ecpay, order_search  # 使用您現有的函數
 
 payment_bp = Blueprint('payment', __name__)
 
@@ -50,9 +50,11 @@ def ecpay_view():
 def create_payment():
     """建立付款訂單"""
     try:
-        # 使用您現有的 ecpay 函數
         order_data = request.get_json() or request.form.to_dict()
-        html_content = ecpay(order_data)
+        print(f"收到付款請求: {order_data}")
+        
+        # 直接使用 main() 函數
+        html_content = main()
         return make_response(html_content)
     except Exception as e:
         return jsonify({
@@ -212,9 +214,10 @@ def verify_check_mac_value(form_data):
         
         # URL encode 並轉小寫
         encoded_string = urllib.parse.quote_plus(raw_string).lower()
+        print(f'encode後:{encoded_string}')
         
-        # MD5 加密並轉大寫
-        calculated_check_mac = hashlib.md5(encoded_string.encode('utf-8')).hexdigest().upper()
+        # sha256 加密並轉大寫
+        calculated_check_mac = hashlib.sha256(encoded_string.encode('utf-8')).hexdigest().upper()
         
         print(f"計算的檢查碼: {calculated_check_mac}")
         print(f"收到的檢查碼: {received_check_mac}")
