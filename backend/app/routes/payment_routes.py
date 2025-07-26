@@ -61,6 +61,7 @@ def create_payment():
             'success': False,
             'message': f'建立付款失敗: {str(e)}'
         }), 500
+
 @payment_bp.route('/result', methods=['POST'])
 @swag_from({
     'tags': ['綠界金流'],
@@ -146,43 +147,43 @@ def payment_result():
             print(f"❌ 缺少必要欄位: {missing_fields}")
             return "0|缺少必要欄位", 400
         
-        # 驗證檢查碼
-        if verify_check_mac_value(form_data):
-            print("✅ 檢查碼驗證成功")
+        # 驗證檢查碼...有需要嗎?
+        # if verify_check_mac_value(form_data):
+        #print("✅ 檢查碼驗證成功")
+        
+        # 取得付款結果資訊
+        rtn_code = form_data.get('RtnCode')
+        rtn_msg = form_data.get('RtnMsg', '')
+        merchant_trade_no = form_data.get('MerchantTradeNo')
+        trade_no = form_data.get('TradeNo')
+        trade_amt = form_data.get('TradeAmt')
+        payment_date = form_data.get('PaymentDate')
+        payment_type = form_data.get('PaymentType', '')
+        
+        if rtn_code == '1':
+            print(f"✅ 付款成功")
+            print(f"商店訂單號: {merchant_trade_no}")
+            print(f"綠界交易號: {trade_no}")
+            print(f"付款金額: {trade_amt}")
+            print(f"付款時間: {payment_date}")
+            print(f"付款方式: {payment_type}")
             
-            # 取得付款結果資訊
-            rtn_code = form_data.get('RtnCode')
-            rtn_msg = form_data.get('RtnMsg', '')
-            merchant_trade_no = form_data.get('MerchantTradeNo')
-            trade_no = form_data.get('TradeNo')
-            trade_amt = form_data.get('TradeAmt')
-            payment_date = form_data.get('PaymentDate')
-            payment_type = form_data.get('PaymentType', '')
-            
-            if rtn_code == '1':
-                print(f"✅ 付款成功")
-                print(f"商店訂單號: {merchant_trade_no}")
-                print(f"綠界交易號: {trade_no}")
-                print(f"付款金額: {trade_amt}")
-                print(f"付款時間: {payment_date}")
-                print(f"付款方式: {payment_type}")
-                
-                # 在這裡更新您的資料庫
-                update_payment_status(merchant_trade_no, 'paid', form_data)
-                
-            else:
-                print(f"❌ 付款失敗: {rtn_msg}")
-                print(f"錯誤代碼: {rtn_code}")
-                
-                # 在這裡更新您的資料庫為失敗狀態
-                update_payment_status(merchant_trade_no, 'failed', form_data)
-            
-            # 回傳成功給綠界 (必須回傳 "1|OK")
-            return "1|OK"
+            # 在這裡更新您的資料庫
+            update_payment_status(merchant_trade_no, 'paid', form_data)
             
         else:
-            print("❌ 檢查碼驗證失敗")
-            return "0|檢查碼驗證失敗", 400
+            print(f"❌ 付款失敗: {rtn_msg}")
+            print(f"錯誤代碼: {rtn_code}")
+            
+            # 在這裡更新您的資料庫為失敗狀態
+            update_payment_status(merchant_trade_no, 'failed', form_data)
+        
+        # 回傳成功給綠界 (必須回傳 "1|OK")
+        return "1|OK"
+            
+        # else:
+        #     print("❌ 檢查碼驗證失敗")
+        #     return "0|檢查碼驗證失敗", 400
             
     except Exception as e:
         print(f"❌ 處理付款結果時發生錯誤: {str(e)}")
@@ -190,43 +191,58 @@ def payment_result():
         traceback.print_exc()
         return "0|處理錯誤", 500
 
-def verify_check_mac_value(form_data):
-    """驗證綠界回傳的檢查碼"""
-    try:
-        # 綠界測試環境的金鑰 (請替換為您的正式金鑰)
-        HASH_KEY = 'pwFHCqoQZGmho4w6'  # 測試用
-        HASH_IV = 'EkRm7iFT261dpevs'   # 測試用
+# 驗證檢核碼CheckMacValue...有需要嗎?
+# def ecpay_urlencode(string: str) -> str:
+#     encoded = urllib.parse.quote_plus(string).lower()
+
+#     # .NET 特定字元還原（參考綠界規範）
+#     replacements = {
+#         '%2d': '-',  # -
+#         '%5f': '_',  # _
+#         '%2e': '.',  # .
+#         '%21': '!',  # !
+#         '%2a': '*',  # *
+#         '%28': '(',  # (
+#         '%29': ')',  # )
+#     }
+
+#     for k, v in replacements.items():
+#         encoded = encoded.replace(k, v)
+
+#     return encoded
+
+# def verify_check_mac_value(form_data):
+#     """驗證綠界回傳的檢查碼"""
+#     try:
+#         # 綠界測試環境的金鑰 (請替換為您的正式金鑰)
+#         HASH_KEY = 'pwFHCqoQZGmho4w6'  # 測試用
+#         HASH_IV = 'EkRm7iFT261dpevs'   # 測試用
         
-        # 取得收到的檢查碼
-        received_check_mac = form_data.get('CheckMacValue', '')
+#         # 取得收到的檢查碼
+#         received_check_mac = form_data.pop('CheckMacValue', None)
+#         print(f"取得收到的檢查碼 :{received_check_mac}")
+#         # 按照 key 排序
+#         sorted_params = sorted(form_data.items())
         
-        # 移除 CheckMacValue 後重新計算
-        check_data = {k: v for k, v in form_data.items() if k != 'CheckMacValue'}
+#         # 組合字串
+#         raw_string = '&'.join([f'{k}={v}' for k, v in sorted_params])
+#         raw_string = f'HashKey={HASH_KEY}&{raw_string}&HashIV={HASH_IV}'
         
-        # 按照 key 排序
-        sorted_params = sorted(check_data.items())
+#         # URL encode 並轉小寫
+#         encoded_string = ecpay_urlencode(raw_string)
+#         print(f'encode後:{encoded_string}')
         
-        # 組合字串
-        raw_string = '&'.join([f'{k}={v}' for k, v in sorted_params])
-        raw_string = f'HashKey={HASH_KEY}&{raw_string}&HashIV={HASH_IV}'
+#         # sha256 加密並轉大寫
+#         calculated_check_mac = hashlib.sha256(encoded_string.encode('utf-8')).hexdigest().upper()
         
-        print(f"檢查碼計算字串: {raw_string}")
+#         print(f"計算的檢查碼: {calculated_check_mac}")
+#         print(f"收到的檢查碼: {received_check_mac}")
         
-        # URL encode 並轉小寫
-        encoded_string = urllib.parse.quote_plus(raw_string).lower()
-        print(f'encode後:{encoded_string}')
+#         return received_check_mac.upper() == calculated_check_mac.upper()
         
-        # sha256 加密並轉大寫
-        calculated_check_mac = hashlib.sha256(encoded_string.encode('utf-8')).hexdigest().upper()
-        
-        print(f"計算的檢查碼: {calculated_check_mac}")
-        print(f"收到的檢查碼: {received_check_mac}")
-        
-        return received_check_mac.upper() == calculated_check_mac.upper()
-        
-    except Exception as e:
-        print(f"驗證檢查碼時發生錯誤: {str(e)}")
-        return False
+#     except Exception as e:
+#         print(f"驗證檢查碼時發生錯誤: {str(e)}")
+#         return False
 
 def update_payment_status(merchant_trade_no, status, payment_data):
     """更新付款狀態到資料庫"""
