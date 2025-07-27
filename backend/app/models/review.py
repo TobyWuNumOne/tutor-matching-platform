@@ -5,8 +5,8 @@ from .model import BaseModel
 class Review(BaseModel):
     __tablename__ = "reviews"
 
-    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), nullable=False)
-    student_id = db.Column(db.Integer, db.ForeignKey("students.id"), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey("courses.id", name="fk_reviews_course_id"), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey("students.id", name="fk_reviews_student_id"), nullable=False)
     rating = db.Column(db.String(10), nullable=False)  # 可以存 "5" 或 "4.5" 等
     comment = db.Column(db.Text)
 

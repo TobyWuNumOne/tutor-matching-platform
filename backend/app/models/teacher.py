@@ -17,7 +17,7 @@ class Teacher(BaseModel):
     teaching_experience = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20))
     blue_premium = db.Column(db.Boolean, default=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", name="fk_teachers_user_id"), nullable=False)
 
     # 關聯
     user = db.relationship("User", back_populates="teacher_profile")
