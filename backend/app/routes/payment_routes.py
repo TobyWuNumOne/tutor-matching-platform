@@ -68,7 +68,16 @@ def ecpay_unified():
             # POST 請求：處理老師認證資料並建立付款
             print("=== POST 請求：建立藍勾勾認證付款訂單 ===")
             
-            order_data = request.get_json() or request.form.to_dict()
+            # 正確處理不同的 Content-Type
+            try:
+                if request.is_json:
+                    order_data = request.get_json()
+                else:
+                    order_data = request.form.to_dict()
+            except Exception as e:
+                print(f"❌ 解析請求資料失敗: {str(e)}")
+                order_data = request.form.to_dict()
+            
             print(f"收到訂單付款請求: {order_data}")
             
             # 驗證訂單資料 (可選)
