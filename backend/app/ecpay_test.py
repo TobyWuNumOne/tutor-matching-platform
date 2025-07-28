@@ -19,11 +19,13 @@ def main():
 		'PaymentType': 'aio',
 		'TotalAmount': 150,         # 商品金額
 		'TradeDesc': '訂單測試',      # 商品描述
-		'ItemName': '尊貴藍勾勾',    # 商品名稱，用#當分行
-		'ReturnURL': 'https://www.ecpay.com.tw/return_url.php',#ReturnURL為付款結果通知回傳網址，為特店server或主機的URL，用來接收綠界後端回傳的付款結果通知。當消費者付款完成後，綠界會將付款結果參數以幕後回傳到該網址。
+		'ItemName': '尊貴藍勾勾#藍鑽會員',    # 商品名稱，用#當分行
+		#'ReturnURL': 'https://www.ecpay.com.tw/return_url.php',  # 後端接收付款結果的 API-綠界的測試API for測試
+		'ReturnURL': 'http://localhost:5000/api/payment/result',  # 後端接收付款結果的 API-自製的API for正式
         #'ClientBackURL': 'http://localhost:3000/payment/success',  # 前端付款完成頁面
-		'ChoosePayment': 'ALL',      # 顧客的付費方式
-		'ItemURL': 'https://www.ecpay.com.tw/item_url.php',     # 商品資訊頁面
+		'ChoosePayment': 'Credit',      # 顧客的付費方式
+		'ItemURL': 'https://www.ecpay.com.tw/item_url.php',     # 商品資訊頁面(綠界測試用)
+		#'ItemURL': 'http://localhost:3000',  # 前端網址(正式)
 		'Remark': '交易備註',         # 備註文字
 		'ChooseSubPayment': '',
         'OrderResultURL': 'http://localhost:5000/api/payment/result',  # 結帳成功/失敗後的結果頁面，告知顧客本次的結帳結果
@@ -115,6 +117,7 @@ def main():
 		
 	try:
 		# 產生綠界訂單所需參數
+		order_params = {k: v for k, v in order_params.items() if v != ''}
 		final_order_params = ecpay_payment_sdk.create_order(order_params)
 		
 		# 產生 html 的 form 格式

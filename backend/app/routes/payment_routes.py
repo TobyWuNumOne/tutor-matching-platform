@@ -1,7 +1,8 @@
 from flask import Blueprint, request, make_response, jsonify
 from flasgger import swag_from
 import hashlib
-import urllib.parse
+import re
+from urllib.parse import quote_plus
 from datetime import datetime
 
 from ..ecpay_test import main
@@ -227,10 +228,7 @@ def process_payment_order(order_data):
     }
 })
 def payment_result():
-    """
-    接收藍勾勾認證付款結果
-    這個端點用作綠界的 ReturnURL，接收認證付款完成後的結果
-    """
+    """接收藍勾勾認證付款結果"""
     try:
         print("=== 收到藍勾勾認證付款結果 ===")
         
@@ -246,45 +244,128 @@ def payment_result():
             print(f"❌ 缺少必要欄位: {missing_fields}")
             return "0|缺少必要欄位", 400
         
-        # 驗證檢查碼...有需要嗎?
-        # if verify_check_mac_value(form_data):
-        #print("✅ 檢查碼驗證成功")
+        # 驗證檢查碼
+        # if not verify_check_mac_value(form_data):
+        #     print("❌ CheckMacValue 驗證失敗")
+        #     return "0|檢查碼驗證失敗", 400
         
-        # 取得付款結果資訊
+        # print("✅ CheckMacValue 驗證成功")
+        
+        # 處理付款結果...
         rtn_code = form_data.get('RtnCode')
-        rtn_msg = form_data.get('RtnMsg', '')
-        merchant_trade_no = form_data.get('MerchantTradeNo')
-        trade_no = form_data.get('TradeNo')
-        trade_amt = form_data.get('TradeAmt')
-        payment_date = form_data.get('PaymentDate')
-        payment_type = form_data.get('PaymentType', '')
         
         if rtn_code == '1':
-            print(f"✅ 藍勾勾認證付款成功")
-            print(f"商店訂單號: {merchant_trade_no}")
-            print(f"綠界交易號: {trade_no}")
-            print(f"認證費用: {trade_amt}")
-            print(f"付款時間: {payment_date}")
-            print(f"付款方式: {payment_type}")
-            
-            # 在這裡更新您的資料庫並啟用老師的藍勾勾認證
-            update_payment_status(merchant_trade_no, 'paid', form_data)
-            
+            print("✅ 付款成功")
+            update_payment_status(form_data.get('MerchantTradeNo'), 'paid', form_data)
         else:
-            print(f"❌ 藍勾勾認證付款失敗: {rtn_msg}")
-            print(f"錯誤代碼: {rtn_code}")
-            
-            # 在這裡更新您的資料庫為失敗狀態
-            update_payment_status(merchant_trade_no, 'failed', form_data)
+            print(f"❌ 付款失敗: {form_data.get('RtnMsg')}")
+            update_payment_status(form_data.get('MerchantTradeNo'), 'failed', form_data)
         
-        # 回傳成功給綠界 (必須回傳 "1|OK")
         return "1|OK"
-            
+        
     except Exception as e:
-        print(f"❌ 處理藍勾勾認證付款結果時發生錯誤: {str(e)}")
+        print(f"❌ 處理付款結果失敗: {str(e)}")
+        return "0|處理錯誤", 500
+def ecpay_urlencode(string: str) -> str: #for verify_check_mac_value()
+    """
+    模擬綠界 .NET URL encode + 特殊字元修正 + 百分號編碼大寫
+    """
+    encoded = quote_plus(string)  # 空白變 +
+    # 修正特定字元
+    replacements = {
+        '%2d': '-', '%5f': '_', '%2e': '.', '%21': '!', '%2a': '*',
+        '%28': '(', '%29': ')'
+    }
+    for old, new in replacements.items():
+        encoded = encoded.replace(old, new)
+    # 把其他保留的 %xx 編碼轉成大寫（防止 %3a 這種出現）
+    encoded = re.sub(r'%[0-9a-f]{2}', lambda m: m.group(0).upper(), encoded)
+    return encoded
+
+def verify_check_mac_value(form_data): #for 驗證綠界回傳結果
+    """驗證綠界 CheckMacValue - 按照官方 SDK 邏輯"""
+    import collections
+    import copy
+    from urllib.parse import quote_plus
+    
+    # 綠界測試環境參數
+    hash_key = 'pwFHCqoQDkhnLLOYic6uuMwMEBRTMG5h'  # 正確的測試 HashKey
+    hash_iv = 'EkRm7iFT261dpevs'
+    merchant_id = '3002607'  # 測試商店代號
+    
+    received_check_mac = form_data.get('CheckMacValue', '')
+    
+    if not received_check_mac:
+        print("❌ 沒有收到 CheckMacValue")
+        return False
+    
+    try:
+        # 步驟1: 複製參數並移除 CheckMacValue
+        _params = copy.deepcopy(dict(form_data))
+        if _params.get('CheckMacValue'):
+            _params.pop('CheckMacValue')
+        
+        # 步驟2: 取得加密類型（預設為 1 = SHA256）
+        encrypt_type = int(_params.get('EncryptType', 1))
+        
+        # 步驟3: 添加 MerchantID（如果不存在的話）
+        if 'MerchantID' not in _params:
+            _params.update({'MerchantID': merchant_id})
+        
+        # 步驟4: 按照 key 的小寫字母排序（重要！）
+        ordered_params = collections.OrderedDict(
+            sorted(_params.items(), key=lambda k: k[0].lower())
+        )
+        
+        # 步驟5: 組合編碼字串
+        encoding_lst = []
+        encoding_lst.append(f'HashKey={hash_key}&')
+        encoding_lst.append(''.join(
+            [f'{key}={value}&' for key, value in ordered_params.items()]
+        ))
+        encoding_lst.append(f'HashIV={hash_iv}')
+        
+        encoding_str = ''.join(encoding_lst)
+        
+        # 步驟6: URL encode（使用官方的 safe 參數）
+        encoded_string = ecpay_urlencode(encoding_str)
+        
+        # 步驟7: 根據加密類型計算檢查碼
+        if encrypt_type == 1:
+            calculated_check_mac = hashlib.sha256(
+                encoded_string.encode('utf-8')
+            ).hexdigest().upper()
+        elif encrypt_type == 0:
+            calculated_check_mac = hashlib.md5(
+                encoded_string.encode('utf-8')
+            ).hexdigest().upper()
+        else:
+            print(f"❌ 不支援的加密類型: {encrypt_type}")
+            return False
+        
+        # Debug 資訊
+        print(f"🔍 CheckMacValue 驗證 Debug：")
+        # print(f"   原始參數: {dict(form_data)}")
+        # print(f"   過濾後參數: {_params}")
+        # print(f"   排序後參數: {dict(ordered_params)}")
+        print(f"   編碼前字串: {encoding_str}")
+        print(f"   編碼後字串: {encoded_string}")
+        # print(f"   加密類型: {encrypt_type}")
+        print(f"   收到的 CheckMacValue: {received_check_mac}")
+        print(f"   計算的 CheckMacValue: {calculated_check_mac}")
+        
+        
+        # 比較結果
+        is_valid = calculated_check_mac == received_check_mac
+        print(f"   驗證結果: {'✅ 成功' if is_valid else '❌ 失敗'}")
+        
+        return is_valid
+        
+    except Exception as e:
+        print(f"❌ CheckMacValue 驗證過程發生錯誤: {str(e)}")
         import traceback
         traceback.print_exc()
-        return "0|處理錯誤", 500
+        return False
 
 def update_payment_status(merchant_trade_no, status, payment_data):
     """更新藍勾勾認證付款狀態到資料庫"""
