@@ -27,7 +27,7 @@ def main():
 		#'ItemURL': 'http://localhost:3000',  # 前端網址(正式)
 		'Remark': '交易備註',         
 		'ChooseSubPayment': '',
-        'ClientBackURL': 'http://localhost:3000/payment/success',  # 前端付款完成頁面，需有「返回商店」功能
+        #'ClientBackURL': 'http://localhost:3000/payment/success',  # 前端付款完成頁面，需有「返回商店」功能
         'OrderResultURL': 'http://localhost:3000/api/payment/result',  # 點擊「返回商店」時跳轉
         #'OrderResultURL': 'https://www.ecpay.com.tw/order_result_url.php', 
 		'NeedExtraPaidInfo': 'Y',
