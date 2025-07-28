@@ -58,9 +58,27 @@ def ecpay_unified():
     """
     try:
         if request.method == 'GET':
-            # GET 請求：回傳測試付款頁面
+            # GET 請求：回傳測試付款頁面（使用預設參數）
             print("=== GET 請求：藍勾勾認證訂單測試付款 ===")
-            html_content = main()
+            
+            # 可以從 URL 參數獲取測試資料
+            test_order_data = {
+                'teacher_id': request.args.get('teacher_id'),
+                'amount': int(request.args.get('amount', 299)),
+                'teacher_name': request.args.get('teacher_name', '測試老師'),
+                'teacher_phone': request.args.get('teacher_phone', '0912345678'),
+                'description': request.args.get('description', '老師藍勾勾認證')
+            }
+            
+            # 如果有 URL 參數，就轉換為綠界參數格式
+            if any(test_order_data.values()):
+                print(f"🔧 使用 URL 參數: {test_order_data}")
+                order_params = convert_to_ecpay_params(test_order_data)
+                html_content = main(order_params)
+            else:
+                print("🔧 使用預設測試參數")
+                html_content = main()  # 不傳參數，使用預設值
+            
             response = make_response(html_content)
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
             return response
@@ -81,11 +99,11 @@ def ecpay_unified():
             
             print(f"收到訂單付款請求: {order_data}")
             
-            # 驗證訂單資料 (可選)
+            # 驗證訂單資料
             validated_data = validate_order_data(order_data)
             print(f"驗證後的訂單資料: {validated_data}")
             
-            # 根據訂單資料建立付款 (目前還是使用固定的 main())
+            # 根據驗證後的資料建立付款
             html_content = process_payment_order(validated_data)
             response = make_response(html_content)
             response.headers['Content-Type'] = 'text/html; charset=utf-8'
@@ -93,6 +111,8 @@ def ecpay_unified():
             
     except Exception as e:
         print(f"❌ 藍勾勾認證付款處理失敗: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'message': f'處理失敗: {str(e)}'
@@ -140,6 +160,111 @@ def validate_order_data(order_data):
     except Exception as e:
         raise ValueError(f'認證資料格式錯誤: {str(e)}')
 
+def create_payment_record(order_params, order_data):
+    """建立付款記錄到資料庫"""
+    try:
+        merchant_trade_no = order_params['MerchantTradeNo']
+        
+        # 檢查是否已存在相同的訂單編號
+        existing_payment = Payment.query.filter_by(merchant_trade_no=merchant_trade_no).first()
+        if existing_payment:
+            print(f"⚠️  訂單編號已存在: {merchant_trade_no}")
+            return existing_payment
+        
+        # 建立新的付款記錄
+        payment = Payment(
+            merchant_trade_no=merchant_trade_no,
+            total_amount=int(order_params['TotalAmount']),
+            payment_status='PENDING',  # 初始狀態為待付款
+            teacher_id=order_data.get('teacher_id'),
+            item_name=order_params['ItemName'],
+            trade_desc=order_params['TradeDesc'],
+            payment_method=None,  # 付款方式稍後由綠界回傳
+            created_at=datetime.now(),
+            payment_date=None,  # 付款完成時間稍後更新
+            ecpay_trade_no=None,  # 綠界交易編號稍後更新
+            rtn_code=None,
+            rtn_msg=None,
+            payment_type_charge_fee='0'
+        )
+        
+        # 儲存到資料庫
+        db.session.add(payment)
+        db.session.commit()
+        
+        print(f"✅ 付款記錄已建立:")
+        print(f"   訂單編號: {merchant_trade_no}")
+        print(f"   老師ID: {order_data.get('teacher_id')}")
+        print(f"   認證費用: {order_params['TotalAmount']} 元")
+        print(f"   商品名稱: {order_params['ItemName']}")
+        print(f"   資料庫ID: {payment.id}")
+        
+        return payment
+        
+    except Exception as e:
+        print(f"❌ 建立付款記錄失敗: {str(e)}")
+        db.session.rollback()
+        return None
+
+def convert_to_ecpay_params(order_data):
+    """將前端訂單資料轉換為綠界 SDK 需要的參數格式"""
+    try:
+        # 產生唯一的訂單編號
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        teacher_id = order_data.get('teacher_id')
+        
+        # 處理 teacher_id 為 None 的情況
+        if teacher_id is not None:
+            teacher_id_str = str(teacher_id)
+        else:
+            teacher_id_str = 'TEST'
+            
+        merchant_trade_no = f"BLUE_{teacher_id_str}_{timestamp}"
+        
+        # 轉換為綠界 SDK 需要的格式
+        ecpay_params = {
+            'MerchantTradeNo': merchant_trade_no,
+            'StoreID': '',
+            'MerchantTradeDate': datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
+            'PaymentType': 'aio',
+            'TotalAmount': int(order_data.get('amount', 299)),
+            'TradeDesc': order_data.get('description', '老師藍勾勾認證'),
+            'ItemName': f"{order_data.get('teacher_name', '老師')}的藍勾勾認證服務",
+            'ReturnURL': 'http://localhost:5000/api/payment/result',  # 付款完成後的回傳網址
+            'ChoosePayment': 'ALL',
+            'ItemURL': 'http://localhost:3000',  # 商品資訊頁面
+            'Remark': f'老師ID: {teacher_id_str}',
+            'ChooseSubPayment': '',
+            
+            # 🎯 付款完成後的跳轉頁面（帶上訂單編號）
+            'ClientBackURL': f'http://localhost:3000/payment/success?trade_no={merchant_trade_no}',
+            'OrderResultURL': f'http://localhost:3000/payment/result?trade_no={merchant_trade_no}',
+            
+            'NeedExtraPaidInfo': 'Y',
+            'DeviceSource': '',
+            'IgnorePayment': '',
+            'PlatformID': '',
+            'InvoiceMark': 'N',
+            'CustomField1': teacher_id_str,  # 存放老師ID
+            'CustomField2': order_data.get('teacher_phone', ''),    # 存放老師電話
+            'CustomField3': '',
+            'CustomField4': '',
+            'EncryptType': 1,
+        }
+        
+        print(f"🔄 訂單資料轉換:")
+        print(f"   原始資料: {order_data}")
+        print(f"   訂單編號: {merchant_trade_no}")
+        print(f"   老師姓名: {order_data.get('teacher_name')}")
+        print(f"   認證費用: {order_data.get('amount')} 元")
+        print(f"   老師ID: {teacher_id_str}")
+        
+        return ecpay_params
+        
+    except Exception as e:
+        print(f"❌ 轉換綠界參數失敗: {str(e)}")
+        raise e
+
 def process_payment_order(order_data):
     """處理藍勾勾認證付款訂單資料並建立付款表單"""
     try:
@@ -151,11 +276,20 @@ def process_payment_order(order_data):
         print(f"老師姓名: {order_data['teacher_name']}")
         print(f"認證描述: {order_data['description']}")
         
-        # TODO: 這裡可以在未來修改 main() 函數來接受動態參數
-        # 目前先使用固定參數的 main() 函數
-        html_content = main()
+        # 將 order_data 轉換為綠界 SDK 需要的 order_params 格式
+        order_params = convert_to_ecpay_params(order_data)
+        print(f"轉換後的綠界參數: {order_params}")
+        
+        # 🔥 重要：在建立綠界付款表單前，先將訂單記錄存入資料庫
+        payment_record = create_payment_record(order_params, order_data)
+        if not payment_record:
+            raise Exception("建立付款記錄失敗")
+        
+        # 使用轉換後的參數建立付款表單
+        html_content = main(order_params)
         
         print("✅ 藍勾勾認證付款表單建立成功")
+        print(f"✅ 付款記錄已存入資料庫 (ID: {payment_record.id})")
         return html_content
         
     except Exception as e:
@@ -353,63 +487,33 @@ def verify_check_mac_value(form_data):
 def update_payment_status(merchant_trade_no, status, payment_data):
     """更新藍勾勾認證付款狀態到資料庫"""
     try:
-        print(f"更新認證訂單 {merchant_trade_no} 狀態為: {status}")
-        print(f"認證付款資料: {payment_data}")
-        
-        # 查找或建立 Payment 記錄
+        # 查找現有記錄
         payment = Payment.query.filter_by(merchant_trade_no=merchant_trade_no).first()
         
-        if not payment:
-            # 如果沒有找到 Payment 記錄，建立一個新的藍勾勾認證訂單
-            payment = Payment(
-                merchant_trade_no=merchant_trade_no,
-                total_amount=int(payment_data.get('TradeAmt', 0)),
-                payment_status='PENDING',
-                teacher_id=None,  # 這裡可能需要從其他地方獲取
-                item_name='老師藍勾勾認證',
-                trade_desc='尊貴藍勾勾認證服務'
-            )
-            db.session.add(payment)
-            print(f"✅ 建立新的藍勾勾認證付款記錄: {merchant_trade_no}")
-        
-        # 更新付款狀態和綠界回傳的資料
-        payment.payment_status = status
+        # 🔥 更新付款狀態
+        payment.payment_status = status  # ← 這裡更新狀態！
         payment.ecpay_trade_no = payment_data.get('TradeNo')
         payment.payment_date = datetime.now()
         payment.rtn_code = payment_data.get('RtnCode')
         payment.rtn_msg = payment_data.get('RtnMsg')
         payment.payment_method = payment_data.get('PaymentType')
-        payment.payment_type_charge_fee = payment_data.get('PaymentTypeChargeFee', '0')
         
-        # 如果付款成功，需要啟用老師的藍勾勾認證
-        if status == 'paid' and payment.teacher_id:
+        # 🔵 如果付款成功，啟用藍勾勾認證
+        if status in ['paid', 'verified'] and payment.teacher_id:
             teacher = Teacher.query.get(payment.teacher_id)
             if teacher:
-                teacher.blue_premium = True
-                print(f"老師藍勾勾認證已啟用 (teacher_id: {payment.teacher_id}, name: {teacher.name})")
-            else:
-                print(f"找不到老師 ID: {payment.teacher_id}")
-        elif status == 'paid':
-            print(f"付款成功但沒有關聯的老師 ID")
+                teacher.blue_premium = True  # ← 啟用認證
         
-        # 提交到資料庫
+        # 💾 提交到資料庫
         db.session.commit()
-        print(f"✅ 藍勾勾認證資料庫更新成功: {merchant_trade_no}")
-        
-        return True
         
     except Exception as e:
-        print(f"❌ 藍勾勾認證資料庫更新失敗: {str(e)}")
         db.session.rollback()
-        return False
-        
-    except Exception as e:
-        print(f"❌ 更新資料庫失敗: {str(e)}")
 
 @payment_bp.route('/status/<trade_no>', methods=['GET'])
 @swag_from({
     'tags': ['綠界金流'],
-    'summary': '查詢付款狀態',
+    'summary': '查詢藍勾勾認證付款狀態',
     'parameters': [
         {
             'name': 'trade_no',
@@ -428,6 +532,7 @@ def update_payment_status(merchant_trade_no, status, payment_data):
                     'success': {'type': 'boolean'},
                     'trade_no': {'type': 'string'},
                     'status': {'type': 'string'},
+                    'teacher_verified': {'type': 'boolean'},
                     'message': {'type': 'string'}
                 }
             }
@@ -435,18 +540,45 @@ def update_payment_status(merchant_trade_no, status, payment_data):
     }
 })
 def get_payment_status(trade_no):
-    """查詢付款狀態"""
+    """查詢藍勾勾認證付款狀態"""
     try:
-        # 這裡實作查詢邏輯
-        # 暫時回傳範例資料
-        return jsonify({
-            'success': True,
-            'trade_no': trade_no,
-            'status': 'pending',  # pending, paid, failed
-            'message': '查詢成功'
-        }), 200
+        # 查詢 Payment 記錄
+        payment = Payment.query.filter_by(merchant_trade_no=trade_no).first()
+        
+        if payment:
+            # 檢查老師是否已啟用藍勾勾認證
+            teacher_verified = False
+            teacher_name = None
+            if payment.teacher_id:
+                teacher = Teacher.query.get(payment.teacher_id)
+                if teacher:
+                    teacher_verified = getattr(teacher, 'blue_premium', False)
+                    teacher_name = getattr(teacher, 'name', None)
+            
+            return jsonify({
+                'success': True,
+                'trade_no': trade_no,
+                'status': payment.payment_status,
+                'amount': payment.total_amount,
+                'teacher_id': payment.teacher_id,
+                'teacher_name': teacher_name,
+                'teacher_verified': teacher_verified,
+                'ecpay_trade_no': payment.ecpay_trade_no,
+                'payment_date': payment.payment_date.isoformat() if payment.payment_date else None,
+                'created_at': payment.created_at.isoformat() if hasattr(payment, 'created_at') and payment.created_at else None,
+                'item_name': payment.item_name,
+                'message': '查詢成功'
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'trade_no': trade_no,
+                'status': 'not_found',
+                'message': '找不到該認證訂單'
+            }), 404
         
     except Exception as e:
+        print(f"❌ 查詢付款狀態失敗: {str(e)}")
         return jsonify({
             'success': False,
             'message': f'查詢失敗: {str(e)}'

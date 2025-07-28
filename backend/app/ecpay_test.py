@@ -10,7 +10,7 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 from datetime import datetime
 
-def main():
+def main(order_params=None):
 	# 修改商品資訊
 	order_params = {
         'MerchantTradeNo': datetime.now().strftime("NO%Y%m%d%H%M%S"),
@@ -21,14 +21,14 @@ def main():
 		'TradeDesc': '訂單測試',     
 		'ItemName': '尊貴藍勾勾#藍鑽會員',    # 商品名稱，用#當分行
 		#'ReturnURL': 'https://www.ecpay.com.tw/return_url.php',  # 後端接收付款結果的 API-綠界的測試API for測試
-		'ReturnURL': 'http://localhost:5000/api/payment/result',  # 後端接收付款結果的 API-自製的API for正式
+		'ReturnURL': 'http://localhost:5000/api/payment/result',  # 後端接收付款結果的 API-自製的API for正式 ，需改成外網可訪問的網址
 		'ChoosePayment': 'Credit',      
-		'ItemURL': 'https://www.ecpay.com.tw/item_url.php',     # 商品資訊頁面(綠界測試用)
-		#'ItemURL': 'http://localhost:3000',  # 前端網址(正式)
+		'ItemURL': 'https://www.ecpay.com.tw/item_url.php',     # 商品資訊頁面(綠界測試用)，需改成外網可訪問的網址
+		#'ItemURL': 'http://localhost:3000',  # 前端網址(正式)，需改成外網可訪問的網址
 		'Remark': '交易備註',         
 		'ChooseSubPayment': '',
-        #'ClientBackURL': 'http://localhost:3000/payment/success',  # 前端付款完成頁面，需有「返回商店」功能
-        'OrderResultURL': 'http://localhost:3000/api/payment/result',  # 點擊「返回商店」時跳轉
+        #'ClientBackURL': 'http://localhost:3000/payment/success',  # 前端付款完成頁面，需有「返回商店」功能，需改成外網可訪問的網址
+        'OrderResultURL': 'http://localhost:3000/api/payment/result',  # 點擊「返回商店」時跳轉，需改成外網可訪問的網址
         #'OrderResultURL': 'https://www.ecpay.com.tw/order_result_url.php', 
 		'NeedExtraPaidInfo': 'Y',
 		'DeviceSource': '',
