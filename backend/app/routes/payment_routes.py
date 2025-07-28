@@ -288,22 +288,6 @@ def payment_result():
         traceback.print_exc()
         return "0|處理錯誤", 500
 
-def ecpay_urlencode(string: str) -> str: #for verify_check_mac_value()
-    """
-    模擬綠界 .NET URL encode + 特殊字元修正 + 百分號編碼大寫
-    """
-    encoded = quote_plus(string)  # 空白變 +
-    # 修正特定字元
-    replacements = {
-        '%2d': '-', '%5f': '_', '%2e': '.', '%21': '!', '%2a': '*',
-        '%28': '(', '%29': ')'
-    }
-    for old, new in replacements.items():
-        encoded = encoded.replace(old, new)
-    # 把其他保留的 %xx 編碼轉成大寫（防止 %3a 這種出現）
-    encoded = re.sub(r'%[0-9a-f]{2}', lambda m: m.group(0).upper(), encoded)
-    return encoded
-
 def verify_check_mac_value(form_data):
     """驗證綠界付款回傳的 CheckMacValue - 使用 SDK 產生檢查碼"""
     try:

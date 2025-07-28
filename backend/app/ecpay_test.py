@@ -17,18 +17,18 @@ def main():
 		'StoreID': '',
 		'MerchantTradeDate': datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
 		'PaymentType': 'aio',
-		'TotalAmount': 150,         # 商品金額
-		'TradeDesc': '訂單測試',      # 商品描述
+		'TotalAmount': 150,         
+		'TradeDesc': '訂單測試',     
 		'ItemName': '尊貴藍勾勾#藍鑽會員',    # 商品名稱，用#當分行
 		#'ReturnURL': 'https://www.ecpay.com.tw/return_url.php',  # 後端接收付款結果的 API-綠界的測試API for測試
 		'ReturnURL': 'http://localhost:5000/api/payment/result',  # 後端接收付款結果的 API-自製的API for正式
-        #'ClientBackURL': 'http://localhost:3000/payment/success',  # 前端付款完成頁面
-		'ChoosePayment': 'Credit',      # 顧客的付費方式
+		'ChoosePayment': 'Credit',      
 		'ItemURL': 'https://www.ecpay.com.tw/item_url.php',     # 商品資訊頁面(綠界測試用)
 		#'ItemURL': 'http://localhost:3000',  # 前端網址(正式)
-		'Remark': '交易備註',         # 備註文字
+		'Remark': '交易備註',         
 		'ChooseSubPayment': '',
-        'OrderResultURL': 'http://localhost:5000/api/payment/result',  # 結帳成功/失敗後的結果頁面，告知顧客本次的結帳結果
+        'ClientBackURL': 'http://localhost:3000/payment/success',  # 前端付款完成頁面，需有「返回商店」功能
+        'OrderResultURL': 'http://localhost:3000/api/payment/result',  # 點擊「返回商店」時跳轉
         #'OrderResultURL': 'https://www.ecpay.com.tw/order_result_url.php', 
 		'NeedExtraPaidInfo': 'Y',
 		'DeviceSource': '',
