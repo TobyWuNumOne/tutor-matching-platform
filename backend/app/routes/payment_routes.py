@@ -209,8 +209,8 @@ def create_payment_record(order_params, order_data):
 def convert_to_ecpay_params(order_data):
     """將前端訂單資料轉換為綠界 SDK 需要的參數格式"""
     try:
-        # 🔧 統一訂單編號格式：BL + 月日時分秒 (符合綠界 20 字元限制)
-        merchant_trade_no = datetime.now().strftime("BL%m%d%H%M%S")
+        # 🔧 統一訂單編號格式：使用時間戳記 (符合綠界 20 字元限制)
+        merchant_trade_no = datetime.now().strftime("%Y%m%d%H%M%S")
         
         # 取得老師 ID 用於記錄
         teacher_id = order_data.get('teacher_id')
@@ -227,7 +227,7 @@ def convert_to_ecpay_params(order_data):
             'ItemName': f"{order_data.get('teacher_name', '老師')}的藍勾勾認證服務",
             'ReturnURL': 'http://localhost:5000/api/payment/result',  # 付款完成後的回傳網址 (同步通知)
             #'NotifyURL': 'http://localhost:5000/api/payment/notify',  # 付款完成後的通知網址 (非同步通知)(正式環境才使用，需用外部可連線之網址)
-            'ChoosePayment': 'ALL',
+            'ChoosePayment': 'Credit',
             'ItemURL': 'http://localhost:3000',  # 商品資訊頁面
             'Remark': f'老師ID: {teacher_id_display}',
             'ChooseSubPayment': '',
@@ -254,7 +254,7 @@ def convert_to_ecpay_params(order_data):
         print(f"   老師姓名: {order_data.get('teacher_name')}")
         print(f"   認證費用: {order_data.get('amount')} 元")
         print(f"   老師ID: {teacher_id_display}")
-        print(f"   ✅ 使用統一訂單號格式")
+        print(f"   ✅ 使用時間戳記訂單號格式")
         
         return ecpay_params
         
