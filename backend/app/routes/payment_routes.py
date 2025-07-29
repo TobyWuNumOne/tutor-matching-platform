@@ -230,7 +230,8 @@ def convert_to_ecpay_params(order_data):
             'TotalAmount': int(order_data.get('amount', 299)),
             'TradeDesc': order_data.get('description', '老師藍勾勾認證'),
             'ItemName': f"{order_data.get('teacher_name', '老師')}的藍勾勾認證服務",
-            'ReturnURL': 'http://localhost:5000/api/payment/result',  # 付款完成後的回傳網址
+            'ReturnURL': 'http://localhost:5000/api/payment/result',  # 付款完成後的回傳網址 (同步通知)
+            'NotifyURL': 'http://localhost:5000/api/payment/notify',  # 付款完成後的通知網址 (非同步通知)
             'ChoosePayment': 'ALL',
             'ItemURL': 'http://localhost:3000',  # 商品資訊頁面
             'Remark': f'老師ID: {teacher_id_str}',
@@ -510,6 +511,193 @@ def update_payment_status(merchant_trade_no, status, payment_data):
     except Exception as e:
         db.session.rollback()
 
+@payment_bp.route('/notify', methods=['POST'])
+@swag_from({
+    'tags': ['綠界金流'],
+    'summary': '接收藍勾勾認證付款非同步通知',
+    'description': '綠界付款完成後的非同步通知網址 (NotifyURL)，用於可靠地接收付款結果。這是綠界系統在付款完成後主動發送的通知，比同步回傳 (ReturnURL) 更可靠。',
+    'parameters': [
+        {
+            'name': 'MerchantID',
+            'in': 'formData',
+            'type': 'string',
+            'required': True,
+            'description': '商店代號'
+        },
+        {
+            'name': 'MerchantTradeNo',
+            'in': 'formData',
+            'type': 'string',
+            'required': True,
+            'description': '商店訂單編號'
+        },
+        {
+            'name': 'TradeNo',
+            'in': 'formData',
+            'type': 'string',
+            'required': True,
+            'description': '綠界交易編號'
+        },
+        {
+            'name': 'RtnCode',
+            'in': 'formData',
+            'type': 'string',
+            'required': True,
+            'description': '回傳碼 (1=成功, 其他=失敗)'
+        },
+        {
+            'name': 'RtnMsg',
+            'in': 'formData',
+            'type': 'string',
+            'required': True,
+            'description': '回傳訊息'
+        },
+        {
+            'name': 'PaymentDate',
+            'in': 'formData',
+            'type': 'string',
+            'required': True,
+            'description': '付款時間 (格式: YYYY/MM/DD HH:mm:ss)'
+        },
+        {
+            'name': 'TradeAmt',
+            'in': 'formData',
+            'type': 'string',
+            'required': True,
+            'description': '交易金額'
+        },
+        {
+            'name': 'PaymentType',
+            'in': 'formData',
+            'type': 'string',
+            'required': False,
+            'description': '付款方式 (Credit_CreditCard, ATM_ESUN, CVS_CVS 等)'
+        },
+        {
+            'name': 'TradeDate',
+            'in': 'formData',
+            'type': 'string',
+            'required': False,
+            'description': '訂單建立時間'
+        },
+        {
+            'name': 'CheckMacValue',
+            'in': 'formData',
+            'type': 'string',
+            'required': True,
+            'description': '檢查碼，用於驗證資料完整性'
+        },
+        {
+            'name': 'SimulatePaid',
+            'in': 'formData',
+            'type': 'string',
+            'required': False,
+            'description': '模擬付款 (測試環境用)'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': '成功接收並處理付款通知',
+            'schema': {
+                'type': 'string',
+                'example': '1|OK'
+            }
+        },
+        400: {
+            'description': '缺少必要欄位或資料驗證失敗',
+            'schema': {
+                'type': 'string',
+                'example': '0|缺少必要欄位'
+            }
+        },
+        500: {
+            'description': '伺服器內部錯誤',
+            'schema': {
+                'type': 'string',
+                'example': '0|處理錯誤'
+            }
+        }
+    }
+})
+def payment_notify():
+    """接收藍勾勾認證付款非同步通知 (NotifyURL)"""
+    try:
+        print("=== 🔔 收到藍勾勾認證付款非同步通知 (NotifyURL) ===")
+        
+        # 取得所有表單資料
+        form_data = request.form.to_dict()
+        print("📥 非同步通知資料:", form_data)
+        
+        # 驗證必要欄位
+        required_fields = ['MerchantID', 'MerchantTradeNo', 'TradeNo', 'RtnCode', 'CheckMacValue']
+        missing_fields = [field for field in required_fields if field not in form_data]
+        
+        if missing_fields:
+            print(f"❌ 非同步通知缺少必要欄位: {missing_fields}")
+            return "0|缺少必要欄位", 400
+        
+        # 取得重要欄位
+        rtn_code = form_data.get('RtnCode')
+        rtn_msg = form_data.get('RtnMsg', '')
+        merchant_trade_no = form_data.get('MerchantTradeNo')
+        trade_no = form_data.get('TradeNo')
+        trade_amt = form_data.get('TradeAmt')
+        payment_type = form_data.get('PaymentType')
+        payment_date = form_data.get('PaymentDate')
+        
+        print(f"📋 非同步通知詳細資料:")
+        print(f"   商店訂單號: {merchant_trade_no}")
+        print(f"   綠界交易號: {trade_no}")
+        print(f"   回傳碼: {rtn_code}")
+        print(f"   回傳訊息: {rtn_msg}")
+        print(f"   付款金額: {trade_amt}")
+        print(f"   付款方式: {payment_type}")
+        print(f"   付款時間: {payment_date}")
+        
+        # 檢查該訂單是否存在
+        payment_record = Payment.query.filter_by(merchant_trade_no=merchant_trade_no).first()
+        if not payment_record:
+            print(f"⚠️  找不到訂單記錄: {merchant_trade_no}")
+            return "0|訂單不存在", 400
+        
+        # 處理付款結果
+        if rtn_code == '1':
+            print(f"✅ 非同步通知: 付款成功！")
+            print(f"   當前訂單狀態: {payment_record.payment_status}")
+            
+            # 驗證 CheckMacValue
+            try:
+                if verify_check_mac_value(form_data):
+                    print("✅ 非同步通知 CheckMacValue 驗證成功")
+                    verification_status = 'verified'
+                    update_payment_status(merchant_trade_no, verification_status, form_data)
+                    print(f"🔵 付款成功，已啟用老師 {payment_record.teacher_id} 的藍勾勾認證")
+                else:
+                    print("⚠️  非同步通知 CheckMacValue 驗證失敗，但付款已成功")
+                    verification_status = 'paid_unverified'
+                    update_payment_status(merchant_trade_no, verification_status, form_data)
+            except Exception as e:
+                print(f"⚠️  非同步通知 CheckMacValue 驗證過程出錯: {str(e)}")
+                verification_status = 'paid_unverified'
+                update_payment_status(merchant_trade_no, verification_status, form_data)
+        else:
+            print(f"❌ 非同步通知: 付款失敗")
+            print(f"   錯誤代碼: {rtn_code}")
+            print(f"   錯誤訊息: {rtn_msg}")
+            update_payment_status(merchant_trade_no, 'failed', form_data)
+        
+        # 非同步通知必須回傳 "1|OK" 給綠界，表示已成功接收
+        print("✅ 非同步通知處理完成，回傳確認給綠界")
+        return "1|OK"
+        
+    except Exception as e:
+        print(f"❌ 處理非同步通知失敗: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # 即使處理失敗，也要回傳錯誤狀態給綠界
+        return "0|處理錯誤", 500
+
 @payment_bp.route('/status/<trade_no>', methods=['GET'])
 @swag_from({
     'tags': ['綠界金流'],
@@ -677,7 +865,8 @@ def payment_test_page():
                 <ul>
                     <li><strong>GET</strong> <code class="code">/api/payment/ecpay</code> - 測試認證付款頁面 (固定資料)</li>
                     <li><strong>POST</strong> <code class="code">/api/payment/ecpay</code> - 建立藍勾勾認證訂單 (動態資料)</li>
-                    <li><strong>POST</strong> <code class="code">/api/payment/result</code> - 接收認證付款結果 (綠界回傳)</li>
+                    <li><strong>POST</strong> <code class="code">/api/payment/result</code> - 接收認證付款結果 (綠界同步回傳)</li>
+                    <li><strong>POST</strong> <code class="code">/api/payment/notify</code> - 接收認證付款通知 (綠界非同步通知)</li>
                     <li><strong>GET</strong> <code class="code">/api/payment/status/&lt;trade_no&gt;</code> - 查詢認證付款狀態</li>
                     <li><strong>GET</strong> <code class="code">/api/payment/test</code> - 測試頁面 (本頁面)</li>
                 </ul>
@@ -693,10 +882,20 @@ def payment_test_page():
                 <ol>
                     <li><strong>建立認證訂單：</strong>前端發送 POST 請求到 <code class="code">/api/payment/ecpay</code></li>
                     <li><strong>跳轉付款：</strong>系統回傳綠界付款頁面，老師完成認證費用付款</li>
-                    <li><strong>接收結果：</strong>綠界發送付款結果到 <code class="code">/api/payment/result</code></li>
+                    <li><strong>同步回傳：</strong>綠界即時發送付款結果到 <code class="code">/api/payment/result</code> (ReturnURL)</li>
+                    <li><strong>非同步通知：</strong>綠界可靠地發送付款確認到 <code class="code">/api/payment/notify</code> (NotifyURL)</li>
                     <li><strong>啟用認證：</strong>付款成功後自動啟用老師的藍勾勾認證</li>
                     <li><strong>查詢狀態：</strong>可通過 <code class="code">/api/payment/status/&lt;trade_no&gt;</code> 查詢</li>
                 </ol>
+                
+                <div style="background: #e8f4fd; padding: 15px; border-radius: 5px; margin-top: 15px;">
+                    <h4>🔔 關於 NotifyURL 與 ReturnURL 的差異：</h4>
+                    <ul style="margin: 10px 0;">
+                        <li><strong>ReturnURL (同步回傳)：</strong>用戶付款完成後即時跳轉，可能因網路問題失敗</li>
+                        <li><strong>NotifyURL (非同步通知)：</strong>綠界主動重複發送，直到收到確認回應，更可靠</li>
+                        <li><strong>建議：</strong>重要的業務邏輯應在 NotifyURL 中處理，ReturnURL 主要用於頁面跳轉</li>
+                    </ul>
+                </div>
             </div>
             
             <div class="section">
