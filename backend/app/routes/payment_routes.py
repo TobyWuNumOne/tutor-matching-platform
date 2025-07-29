@@ -209,17 +209,12 @@ def create_payment_record(order_params, order_data):
 def convert_to_ecpay_params(order_data):
     """將前端訂單資料轉換為綠界 SDK 需要的參數格式"""
     try:
-        # 產生唯一的訂單編號
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        teacher_id = order_data.get('teacher_id')
+        # 🔧 統一訂單編號格式：BL + 月日時分秒 (符合綠界 20 字元限制)
+        merchant_trade_no = datetime.now().strftime("BL%m%d%H%M%S")
         
-        # 處理 teacher_id 為 None 的情況
-        if teacher_id is not None:
-            teacher_id_str = str(teacher_id)
-        else:
-            teacher_id_str = 'TEST'
-            
-        merchant_trade_no = f"BLUE_{teacher_id_str}_{timestamp}"
+        # 取得老師 ID 用於記錄
+        teacher_id = order_data.get('teacher_id')
+        teacher_id_display = str(teacher_id) if teacher_id is not None else '測試'
         
         # 轉換為綠界 SDK 需要的格式
         ecpay_params = {
@@ -234,7 +229,7 @@ def convert_to_ecpay_params(order_data):
             #'NotifyURL': 'http://localhost:5000/api/payment/notify',  # 付款完成後的通知網址 (非同步通知)(正式環境才使用，需用外部可連線之網址)
             'ChoosePayment': 'ALL',
             'ItemURL': 'http://localhost:3000',  # 商品資訊頁面
-            'Remark': f'老師ID: {teacher_id_str}',
+            'Remark': f'老師ID: {teacher_id_display}',
             'ChooseSubPayment': '',
             
             # 🎯 付款完成後的跳轉頁面（帶上訂單編號）
@@ -246,7 +241,7 @@ def convert_to_ecpay_params(order_data):
             'IgnorePayment': '',
             'PlatformID': '',
             'InvoiceMark': 'N',
-            'CustomField1': teacher_id_str,  # 存放老師ID
+            'CustomField1': teacher_id_display,  # 存放老師ID
             'CustomField2': order_data.get('teacher_phone', ''),    # 存放老師電話
             'CustomField3': '',
             'CustomField4': '',
@@ -255,10 +250,11 @@ def convert_to_ecpay_params(order_data):
         
         print(f"🔄 訂單資料轉換:")
         print(f"   原始資料: {order_data}")
-        print(f"   訂單編號: {merchant_trade_no}")
+        print(f"   訂單編號: {merchant_trade_no} (長度: {len(merchant_trade_no)} 字元)")
         print(f"   老師姓名: {order_data.get('teacher_name')}")
         print(f"   認證費用: {order_data.get('amount')} 元")
-        print(f"   老師ID: {teacher_id_str}")
+        print(f"   老師ID: {teacher_id_display}")
+        print(f"   ✅ 使用統一訂單號格式")
         
         return ecpay_params
         
