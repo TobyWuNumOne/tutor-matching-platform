@@ -231,7 +231,7 @@ def convert_to_ecpay_params(order_data):
             'TradeDesc': order_data.get('description', '老師藍勾勾認證'),
             'ItemName': f"{order_data.get('teacher_name', '老師')}的藍勾勾認證服務",
             'ReturnURL': 'http://localhost:5000/api/payment/result',  # 付款完成後的回傳網址 (同步通知)
-            'NotifyURL': 'http://localhost:5000/api/payment/notify',  # 付款完成後的通知網址 (非同步通知)
+            #'NotifyURL': 'http://localhost:5000/api/payment/notify',  # 付款完成後的通知網址 (非同步通知)(正式環境才使用，需用外部可連線之網址)
             'ChoosePayment': 'ALL',
             'ItemURL': 'http://localhost:3000',  # 商品資訊頁面
             'Remark': f'老師ID: {teacher_id_str}',

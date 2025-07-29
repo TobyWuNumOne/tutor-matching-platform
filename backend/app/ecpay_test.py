@@ -22,7 +22,7 @@ def main(order_params=None):
 		'ItemName': '尊貴藍勾勾#藍鑽會員',    # 商品名稱，用#當分行
 		#'ReturnURL': 'https://www.ecpay.com.tw/return_url.php',  # 後端接收付款結果的 API-綠界的測試API for測試
 		'ReturnURL': 'http://localhost:5000/api/payment/result',  # 後端接收付款結果的 API-自製的API for正式 ，需改成外網可訪問的網址
-		'NotifyURL': 'http://localhost:5000/api/payment/notify',
+		#'NotifyURL': 'http://localhost:5000/api/payment/notify', # 付款完成後的通知網址 (非同步通知)(正式環境才使用，需用外部可連線之網址)
 		'ChoosePayment': 'Credit',      
 		'ItemURL': 'https://www.ecpay.com.tw/item_url.php',     # 商品資訊頁面(綠界測試用)，需改成外網可訪問的網址
 		#'ItemURL': 'http://localhost:3000',  # 前端網址(正式)，需改成外網可訪問的網址
