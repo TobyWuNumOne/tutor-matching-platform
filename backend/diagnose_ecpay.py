@@ -10,7 +10,7 @@ sys.path.append('.')
 
 from datetime import datetime
 from app.routes.payment_routes import convert_to_ecpay_params
-from app.ecpay_test import main
+from backend.app.redirect_ecpay import main
 
 def diagnose_ecpay_order():
     print("=== 🔍 綠界訂單診斷工具 ===")

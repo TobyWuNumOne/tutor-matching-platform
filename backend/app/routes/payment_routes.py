@@ -5,7 +5,7 @@ import re
 from urllib.parse import quote_plus
 from datetime import datetime
 
-from ..ecpay_test import main
+from ..redirect_ecpay import main
 from ..models import Payment, Teacher
 from ..extensions import db
 
