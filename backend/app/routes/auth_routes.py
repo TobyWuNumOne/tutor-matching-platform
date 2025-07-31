@@ -32,7 +32,7 @@ auth_bp = Blueprint("auth", __name__)
                     "required": ["name", "account", "password", "role"],
                     "properties": {
                         "name": {"type": "string", "example": "王小明"},
-                        "account": {"type": "string", "example": "user123"},
+                        "account": {"type": "string", "example": "test@email.com"},
                         "password": {"type": "string", "example": "12345678"},
                         "role": {"type": "string", "enum": ["teacher", "student", "admin"], "example": "student"}
                     }
