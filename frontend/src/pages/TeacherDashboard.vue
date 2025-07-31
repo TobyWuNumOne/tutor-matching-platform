@@ -6,7 +6,6 @@ import Footer from "../components/Footer.vue";
 import { useRouter } from "vue-router";
 const router = useRouter();
 
-
 const teachers = reactive({
     name: "老師 A",
     email: "teachera@test.com",
@@ -123,13 +122,6 @@ const calendarDays = computed(() => {
     // 月曆起始空白格(第一天是星期幾，前面空幾格)
     for (let i = 0; i < firstDayWeek; i++) {
         days.push("");
-
-    }
-    // 月份日期
-    for (let d = 1; d <= totalDays; d++) {
-        days.push(d);
-    }
-
     }
     // 月份日期
     for (let d = 1; d <= totalDays; d++) {
@@ -345,12 +337,8 @@ function openBulletin() {
                             公告欄
                         </button>
                         <button
-
                             class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md w-full text-center"
-
                             @click="router.push('/courseform')"
-                            class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md cursor-pointer w-full text-center"
-
                         >
                             建立課程
                         </button>

@@ -12,7 +12,6 @@ import RegisterTeacher from "../pages/RegisterTeacher.vue";
 import CourseForm from "../pages/CourseForm.vue";
 import ReviewForm from "../pages/ReviewForm.vue";
 
-
 const routes = [
     {
         path: "/",
@@ -51,17 +50,16 @@ const routes = [
         component: Booking,
     },
     {
-
         path: "/register-teacher",
         component: RegisterTeacher,
-
+    },
+    {
         path: "/courseform",
         component: CourseForm,
     },
     {
         path: "/reviewform",
         component: ReviewForm,
-
     },
 ];
 

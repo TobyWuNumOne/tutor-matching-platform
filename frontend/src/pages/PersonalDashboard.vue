@@ -35,10 +35,6 @@ const submitProfileEdit = () => {
     isEditing.value = false;
 };
 
-
-});
-
-
 // 假資料老師
 const bookedTeachers = ref([
     {
