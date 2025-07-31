@@ -6,11 +6,16 @@ import Footer from "../components/Footer.vue";
 import { useRouter } from "vue-router";
 const router = useRouter();
 
+// 取得登入老師資料
+let userInfo = {};
+try {
+    userInfo = JSON.parse(localStorage.getItem("user_info")) || {};
+} catch (e) {
+    userInfo = {};
+}
 const teachers = reactive({
-    name: "老師 A",
-    email: "teachera@test.com",
-    country: "臺北 Taipei",
-    course: "國文",
+    name: userInfo.name || "",
+    email: userInfo.account || "",
 });
 
 // 編輯狀態
@@ -20,16 +25,12 @@ const editingProfile = ref(false);
 const tempTeacher = reactive({
     name: "",
     email: "",
-    country: "",
-    course: "",
 });
 
 // 編輯個人資料按鈕事件
 function startEditProfile() {
     tempTeacher.name = teachers.name;
     tempTeacher.email = teachers.email;
-    tempTeacher.country = teachers.country;
-    tempTeacher.course = teachers.course;
     editingProfile.value = true;
 }
 
@@ -37,8 +38,6 @@ function startEditProfile() {
 function saveProfile() {
     teachers.name = tempTeacher.name;
     teachers.email = tempTeacher.email;
-    teachers.country = tempTeacher.country;
-    teachers.course = tempTeacher.course;
     editingProfile.value = false;
 }
 
@@ -311,14 +310,6 @@ function openBulletin() {
                     </p>
                     <p class="text-sm text-gray-600 mb-4">
                         {{ teachers.email }}
-                    </p>
-                    <p class="text-gray-600 mb-2">
-                        <span class="font-bold">來自：</span
-                        >{{ teachers.country }}
-                    </p>
-                    <p class="text-gray-600">
-                        <span class="font-bold">教學科目：</span
-                        >{{ teachers.course }}
                     </p>
 
                     <!-- 按鈕區 -->
