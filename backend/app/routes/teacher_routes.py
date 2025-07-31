@@ -202,7 +202,9 @@ def create_teacher():
         
         # 建立新老師資料
         new_teacher = Teacher(**data)
-        
+        # 設定使用者角色為老師
+        user = User.query.get(data['user_id'])
+        user.role = "teacher"
         # 儲存到資料庫
         db.session.add(new_teacher)
         db.session.commit()
@@ -341,3 +343,89 @@ def get_teacher_by_name(teacher_name):
             'success': False,
             'message': f'獲取老師資訊失敗: {str(e)}'
         }), 500
+@teacher_bp.route('/update', methods=['PUT'])
+@swag_from({
+    'tags': ['老師管理'],
+    'summary': '更新老師與使用者資料',
+    'description': '同時更新老師（Teacher）與使用者（User）表的姓名、Email等資料',
+    'parameters': [
+        {
+            'name': 'body',
+            'in': 'body',
+            'required': True,
+            'description': '要更新的欄位',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'user_id': {'type': 'integer', 'description': '使用者ID', 'example': 1},
+                    'name': {'type': 'string', 'description': '姓名', 'example': '王老師'},
+                    'email': {'type': 'string', 'description': '電子郵件', 'example': 'teacher@example.com'},
+                    # 你有其他欄位也可加上
+                },
+                'required': ['user_id', 'name', 'email']
+            }
+        }
+    ],
+    'responses': {
+        200: {
+            'description': '更新成功',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': True},
+                    'message': {'type': 'string', 'example': '更新成功'}
+                }
+            }
+        },
+        404: {
+            'description': '找不到使用者或老師',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': False},
+                    'message': {'type': 'string', 'example': '找不到使用者'}
+                }
+            }
+        },
+        500: {
+            'description': '伺服器錯誤',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'success': {'type': 'boolean', 'example': False},
+                    'message': {'type': 'string', 'example': '更新失敗: ...'}
+                }
+            }
+        }
+    }
+})
+def update_teacher_and_user():        
+    """
+    同時更新老師與 User 資料
+    """
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        name = data.get('name')
+        email = data.get('email')
+        # 你有其他欄位也可加上
+
+        # 1. 更新 User
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': '找不到使用者'}), 404
+        user.name = name
+        user.email = email
+
+        # 2. 更新 Teacher
+        teacher = Teacher.query.filter_by(user_id=user_id).first()
+        if not teacher:
+            return jsonify({'success': False, 'message': '找不到老師資料'}), 404
+        teacher.name = name
+        teacher.email = email
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': '更新成功'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'更新失敗: {str(e)}'}), 500

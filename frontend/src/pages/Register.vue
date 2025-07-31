@@ -1,74 +1,75 @@
 <script setup>
-    import Navbar from '../components/Navbar.vue';
-    import { ref, watch } from 'vue';
-    import { RouterLink } from 'vue-router';
-    import axios from 'axios'; // 確保已安裝 axios
+import Navbar from "../components/Navbar.vue";
+import { ref, watch } from "vue";
+import { RouterLink, useRouter } from "vue-router";
+import axios from "axios"; // 確保已安裝 axios
 
-    // 密碼顯示控制
-    const showPassword = ref(false);
-    const showConfirmPassword = ref(false);
-    const password = ref('');
-    const confirmPassword = ref('');
-    const passwordError = ref(''); // 新增錯誤訊息狀態
-    const name = ref(''); // 新增姓名的狀態
-    const email = ref(''); // 新增電子郵件的狀態
-    const gender = ref(''); // 新增性別的狀態
-    const age = ref(''); // 新增年齡的狀態
-    const ageError = ref(''); // 新增年齡錯誤訊息狀態
+// 密碼顯示控制
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+const password = ref("");
+const confirmPassword = ref("");
+const passwordError = ref(""); // 新增錯誤訊息狀態
+const name = ref(""); // 新增姓名的狀態
+const email = ref(""); // 新增電子郵件的狀態
+const gender = ref(""); // 新增性別的狀態
+const age = ref(""); // 新增年齡的狀態
+const ageError = ref(""); // 新增年齡錯誤訊息狀態
+const loading = ref(false);
+const errorMsg = ref("");
+const router = useRouter();
 
-    // 確認密碼的雙向綁定
-    watch([password, confirmPassword], ([newPassword, newConfirmPassword]) => {
-        if (newConfirmPassword && newPassword !== newConfirmPassword) {
-            // 顯示錯誤訊息
-            passwordError.value = '密碼不一致';
-        } else {
-            passwordError.value = ''; // 清除錯誤訊息
+// 確認密碼的雙向綁定
+watch([password, confirmPassword], ([newPassword, newConfirmPassword]) => {
+    if (newConfirmPassword && newPassword !== newConfirmPassword) {
+        // 顯示錯誤訊息
+        passwordError.value = "密碼不一致";
+    } else {
+        passwordError.value = ""; // 清除錯誤訊息
+    }
+});
+
+// 年齡限制檢查
+watch(age, (newAge) => {
+    if (newAge && newAge < 18) {
+        ageError.value = "未滿18歲不得註冊";
+    } else {
+        ageError.value = ""; // 清除年齡錯誤訊息
+    }
+});
+
+const handleSubmit = async () => {
+    try {
+        errorMsg.value = "";
+        loading.value = true;
+        // 阻擋年齡低於18歲的表單提交
+        if (age.value < 18) {
+            errorMsg.value = "未滿18歲不得註冊";
+            return;
         }
-    });
-
-    // 年齡限制檢查
-    watch(age, (newAge) => {
-        if (newAge && newAge < 18) {
-            ageError.value = '未滿18歲不得註冊';
-        } else {
-            ageError.value = ''; // 清除年齡錯誤訊息
+        if (passwordError.value) {
+            errorMsg.value = passwordError.value;
+            return;
         }
-    });
-
-    const handleSubmit = async () => {
-        try {
-            // 阻擋年齡低於18歲的表單提交
-            if (age.value < 18) {
-                alert('未滿18歲不得註冊');
-                return;
-            }
-            if (passwordError.value) {
-                alert(passwordError.value);
-                return;
-            }
-            // 提交主要註冊資料
-            const userData = {
-                name: name.value,
-                email: email.value,
-                password: password.value,
-            };
-            await axios.post('/api/register', userData);
-
-            // 提交性別和年齡到另一個資料表
-            const additionalData = {
-                gender: gender.value,
-                age: age.value,
-            };
-            await axios.post('/api/user-details', additionalData);
-
-            //alert('註冊成功！');
-            //轉跳回登入頁面
-            window.location.href = '/login'; // 或使用 router.push('/login') 進行
-        } catch (error) {
-            console.error('註冊失敗', error);
-            alert('註冊失敗，請稍後再試');
-        }
-    };
+        // 提交主要註冊資料，包含性別與年齡
+        const userData = {
+            name: name.value,
+            account: email.value,
+            password: password.value,
+            role: "student", // 預設註冊為學生
+            gender: gender.value,
+            age: age.value,
+        };
+        console.log("[Register] userData:", userData);
+        await axios.post("http://127.0.0.1:5000/api/auth/register", userData);
+        // 註冊成功導向首頁
+        router.push("/");
+    } catch (error) {
+        errorMsg.value = error.response?.data?.error || "註冊失敗，請稍後再試";
+    } finally {
+        loading.value = false;
+    }
+};
 </script>
 
 <template>
@@ -118,18 +119,6 @@
                     </select>
                     <!-- 年紀欄位 -->
                     <label class="text-sm font-medium">年齡</label>
-                    <div class="relative">
-                        <input
-                            type="number"
-                            v-model="age"
-                            required
-                            class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p v-if="ageError" class="text-red-500 text-sm">
-                            {{ ageError }}
-                        </p>
-                    </div>
-
                     <div class="relative">
                         <input
                             type="number"
@@ -198,10 +187,15 @@
                 <div class="grid gap-3">
                     <button
                         type="submit"
-                        class="bg-blue-600 text-white py-2 rounded-md text-center hover:bg-blue-700 transition cursor-pointer"
+                        :disabled="loading"
+                        class="bg-blue-600 text-white py-2 rounded-md text-center hover:bg-blue-700 transition cursor-pointer disabled:opacity-60"
                     >
-                        註冊
+                        <span v-if="loading">註冊中...</span>
+                        <span v-else>註冊</span>
                     </button>
+                    <span v-if="errorMsg" class="text-red-500 text-sm">{{
+                        errorMsg
+                    }}</span>
 
                     <!-- 分隔線 -->
                     <div

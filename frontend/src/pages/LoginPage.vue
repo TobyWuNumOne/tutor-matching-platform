@@ -1,11 +1,53 @@
 <script setup>
 import { ref } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 import { onMounted } from "vue";
 
 // 控制密碼顯示/隱藏
 const showPassword = ref(false);
 const password = ref("");
+const account = ref("");
+const router = useRouter();
+const loading = ref(false);
+const errorMsg = ref("");
+
+// 登入
+async function login() {
+    errorMsg.value = "";
+    loading.value = true;
+    try {
+        const res = await fetch("http://127.0.0.1:5000/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                account: account.value,
+                password: password.value,
+            }),
+        });
+        let data = {};
+        try {
+            data = await res.json();
+        } catch (jsonErr) {
+            // 非 JSON 回應
+            errorMsg.value = "伺服器回應格式錯誤，請稍後再試";
+            return;
+        }
+        if (res.ok && data.access_token) {
+            localStorage.setItem("jwt", data.access_token);
+            // 額外存一份用戶資訊
+            if (data.user) {
+                localStorage.setItem("user_info", JSON.stringify(data.user));
+            }
+            router.push("/personaldashboard"); // 登入成功後導向個人頁面
+        } else {
+            errorMsg.value = data.error || "登入失敗，請檢查帳號密碼";
+        }
+    } catch (e) {
+        errorMsg.value = "無法連線伺服器，請稍後再試";
+    } finally {
+        loading.value = false;
+    }
+}
 
 // Google 登入回調
 function handleCredentialResponse(response) {
@@ -54,7 +96,7 @@ onMounted(() => {
         <div
             class="bg-white shadow-lg rounded-lg p-8 w-[90%] max-w-md space-y-6"
         >
-            <form class="space-y-4">
+            <form class="space-y-4" @submit.prevent="login">
                 <div class="text-center space-y-1">
                     <p class="text-xl font-semibold">歡迎回來</p>
                     <p class="text-gray-500 text-sm">請輸入帳號密碼</p>
@@ -66,6 +108,7 @@ onMounted(() => {
                     <label class="text-sm font-medium">帳號</label>
                     <input
                         type="email"
+                        v-model="account"
                         class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
 
@@ -108,10 +151,16 @@ onMounted(() => {
                 <!-- 登入按鈕 -->
                 <div class="grid gap-3">
                     <button
-                        class="bg-blue-600 text-white py-2 rounded-md text-center hover:bg-blue-700 transition cursor-pointer"
+                        type="submit"
+                        :disabled="loading"
+                        class="bg-blue-600 text-white py-2 rounded-md text-center hover:bg-blue-700 transition cursor-pointer disabled:opacity-60"
                     >
-                        登入
+                        <span v-if="loading">登入中...</span>
+                        <span v-else>登入</span>
                     </button>
+                    <span v-if="errorMsg" class="text-red-500 text-sm">{{
+                        errorMsg
+                    }}</span>
 
                     <!-- 分隔線 + 或 -->
                     <div

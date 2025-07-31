@@ -6,11 +6,16 @@ import Footer from "../components/Footer.vue";
 import { useRouter } from "vue-router";
 const router = useRouter();
 
+// 取得登入老師資料
+let userInfo = {};
+try {
+    userInfo = JSON.parse(localStorage.getItem("user_info")) || {};
+} catch (e) {
+    userInfo = {};
+}
 const teachers = reactive({
-    name: "老師 A",
-    email: "teachera@test.com",
-    country: "臺北 Taipei",
-    course: "國文",
+    name: userInfo.name || "",
+    email: userInfo.account || "",
 });
 
 // 編輯狀態
@@ -18,28 +23,40 @@ const editingProfile = ref(false);
 
 // 複製老師資料做暫存編輯
 const tempTeacher = reactive({
-    name: "",
-    email: "",
-    country: "",
-    course: "",
+    name: teachers.name,
+    email: teachers.email,
 });
 
 // 編輯個人資料按鈕事件
-function startEditProfile() {
-    tempTeacher.name = teachers.name;
-    tempTeacher.email = teachers.email;
-    tempTeacher.country = teachers.country;
-    tempTeacher.course = teachers.course;
-    editingProfile.value = true;
-}
-
-// 儲存個人資料
-function saveProfile() {
-    teachers.name = tempTeacher.name;
-    teachers.email = tempTeacher.email;
-    teachers.country = tempTeacher.country;
-    teachers.course = tempTeacher.course;
-    editingProfile.value = false;
+async function saveProfile() {
+    // 1. 呼叫後端 API 更新 Teacher 與 User
+    const user_id = userInfo.id; // 或 userInfo.user_id
+    const payload = {
+        user_id,
+        name: tempTeacher.name,
+        email: tempTeacher.email,
+        // 其他欄位...
+    };
+    try {
+        const res = await fetch("http://127.0.0.1:5000/api/teacher/update", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+            teachers.name = tempTeacher.name;
+            teachers.email = tempTeacher.email;
+            editingProfile.value = false;
+            // 可選：更新 localStorage user_info
+            userInfo.name = tempTeacher.name;
+            userInfo.email = tempTeacher.email;
+            localStorage.setItem("user_info", JSON.stringify(userInfo));
+        } else {
+            // 處理錯誤
+        }
+    } catch (e) {
+        // 處理錯誤
+    }
 }
 
 // 取消編輯
@@ -47,38 +64,40 @@ function cancelEditProfile() {
     editingProfile.value = false;
 }
 
-const bookedStudents = ref([
-    {
-        name: "學生 A",
-        course: "國文",
-        time: "09:00 - 10:00",
-        status: "線上",
-    },
-    {
-        name: "學生 B",
-        course: "英文",
-        time: "10:00 - 11:00",
-        status: "離線",
-    },
-    {
-        name: "學生 C",
-        course: "數學",
-        time: "14:00 - 15:00",
-        status: "線上",
-    },
-    {
-        name: "學生 D",
-        course: "社會",
-        time: "17:00 - 18:00",
-        status: "離線",
-    },
-    {
-        name: "學生 E",
-        course: "自然",
-        time: "20:00 - 21:00",
-        status: "線上",
-    },
-]);
+const bookedStudents = ref([]);
+
+// 取得老師課程及所有 Bookings
+async function fetchTeacherCoursesAndBookings() {
+    try {
+        // 依據你的 API 設計，這裡假設用老師 user_id 查詢
+        const user_id = userInfo.id || userInfo.user_id;
+        const res = await fetch(
+            `http://127.0.0.1:5000/api/course/list?teacher_id=${user_id}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        // 假設 data.data 是課程陣列，每個課程有 bookings 陣列
+        const students = [];
+        (data.data || []).forEach((course) => {
+            (course.bookings || []).forEach((booking) => {
+                students.push({
+                    name: booking.student_name || booking.student?.name || "", // 根據你的資料結構
+                    course: course.subject || course.name || "",
+                    time: booking.time || booking.timeslot || "",
+                    status: booking.status || "",
+                });
+            });
+        });
+        bookedStudents.value = students;
+    } catch (e) {
+        // 可選：錯誤處理
+    }
+}
+
+import { onMounted } from "vue";
+onMounted(() => {
+    fetchTeacherCoursesAndBookings();
+});
 
 const showAllStudents = ref(false);
 const showCalendar = ref(false);
@@ -312,14 +331,6 @@ function openBulletin() {
                     <p class="text-sm text-gray-600 mb-4">
                         {{ teachers.email }}
                     </p>
-                    <p class="text-gray-600 mb-2">
-                        <span class="font-bold">來自：</span
-                        >{{ teachers.country }}
-                    </p>
-                    <p class="text-gray-600">
-                        <span class="font-bold">教學科目：</span
-                        >{{ teachers.course }}
-                    </p>
 
                     <!-- 按鈕區 -->
                     <div class="grid gap-2 mt-4 w-full">
@@ -431,16 +442,6 @@ function openBulletin() {
                                         v-model="tempTeacher.email"
                                         class="border rounded p-2 w-full mb-2"
                                         placeholder="Email"
-                                    />
-                                    <input
-                                        v-model="tempTeacher.country"
-                                        class="border rounded p-2 w-full mb-2"
-                                        placeholder="國家"
-                                    />
-                                    <input
-                                        v-model="tempTeacher.course"
-                                        class="border rounded p-2 w-full mb-2"
-                                        placeholder="教學科目"
                                     />
 
                                     <div class="flex gap-2 mt-2">

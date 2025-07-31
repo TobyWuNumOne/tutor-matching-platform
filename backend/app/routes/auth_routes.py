@@ -32,7 +32,7 @@ auth_bp = Blueprint("auth", __name__)
                     "required": ["name", "account", "password", "role"],
                     "properties": {
                         "name": {"type": "string", "example": "王小明"},
-                        "account": {"type": "string", "example": "user123"},
+                        "account": {"type": "string", "example": "test@email.com"},
                         "password": {"type": "string", "example": "12345678"},
                         "role": {"type": "string", "enum": ["teacher", "student", "admin"], "example": "student"}
                     }
@@ -50,24 +50,42 @@ auth_bp = Blueprint("auth", __name__)
 )
 def register():
     try:
-        schema = UserCreateSchema()
+        print('收到前端資料:', request.json)
+        from marshmallow import EXCLUDE
+        schema = UserCreateSchema(unknown=EXCLUDE)
         data = schema.load(request.json)
 
         # 檢查用戶是否已存在
         if User.query.filter_by(account=data["account"]).first():
+            print('帳號已存在:', data["account"])
             return jsonify({"error": "帳號已註冊過..."}), 400
+
 
         # 創建新用戶
         user = User(name=data["name"], account=data["account"], role=data["role"])
         user.set_password(data["password"])
         user.save()
 
+        # 如果是學生，建立 student profile
+        if data["role"] == "student":
+            from app.models.student import Student
+            gender = request.json.get("gender")
+            age = request.json.get("age")
+            email = data["account"]
+            student = Student(email=email, gender=gender, age=age, user_id=user.id)
+            db.session.add(student)
+            db.session.commit()
+            print('已建立學生資料:', email, gender, age)
+
+        print('註冊成功:', data["account"])
         return jsonify({"message": "帳號註冊成功"}), 201
 
     except ValidationError as err:
+        print('驗證錯誤:', err.messages)
         return jsonify({"errors": err.messages}), 400
 
     except Exception as e:
+        print('註冊例外:', e)
         return jsonify({"error": str(e)}), 500
 
 
@@ -104,9 +122,14 @@ def login():
         user = User.query.filter_by(account=data.get("account")).first()
 
         if user and user.check_password(data.get("password")):
-            # 創建 access token 和 refresh token
-            access_token = create_access_token(identity=str(user.id))
-            refresh_token = create_refresh_token(identity=str(user.id))
+            # 自訂 payload，將帳號與名稱等資訊放進 JWT
+            additional_claims = {
+                "account": user.account,
+                "name": user.name,
+                "role": user.role
+            }
+            access_token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
+            refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
 
             return (
                 jsonify(
