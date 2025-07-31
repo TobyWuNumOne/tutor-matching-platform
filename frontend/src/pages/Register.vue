@@ -51,14 +51,17 @@ const handleSubmit = async () => {
             errorMsg.value = passwordError.value;
             return;
         }
-        // 提交主要註冊資料
+        // 提交主要註冊資料，包含性別與年齡
         const userData = {
             name: name.value,
             account: email.value,
             password: password.value,
             role: "student", // 預設註冊為學生
+            gender: gender.value,
+            age: age.value,
         };
-        await axios.post("http://localhost:5000/api/auth/register", userData);
+        console.log("[Register] userData:", userData);
+        await axios.post("http://127.0.0.1:5000/api/auth/register", userData);
         // 註冊成功導向首頁
         router.push("/");
     } catch (error) {
@@ -116,18 +119,6 @@ const handleSubmit = async () => {
                     </select>
                     <!-- 年紀欄位 -->
                     <label class="text-sm font-medium">年齡</label>
-                    <div class="relative">
-                        <input
-                            type="number"
-                            v-model="age"
-                            required
-                            class="rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p v-if="ageError" class="text-red-500 text-sm">
-                            {{ ageError }}
-                        </p>
-                    </div>
-
                     <div class="relative">
                         <input
                             type="number"
