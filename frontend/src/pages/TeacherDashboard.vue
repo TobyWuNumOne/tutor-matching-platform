@@ -2,8 +2,10 @@
 import { reactive, ref, computed } from "vue";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
+
 import { useRouter } from "vue-router";
 const router = useRouter();
+
 
 const teachers = reactive({
     name: "老師 A",
@@ -11,6 +13,40 @@ const teachers = reactive({
     country: "臺北 Taipei",
     course: "國文",
 });
+
+// 編輯狀態
+const editingProfile = ref(false);
+
+// 複製老師資料做暫存編輯
+const tempTeacher = reactive({
+    name: "",
+    email: "",
+    country: "",
+    course: "",
+});
+
+// 編輯個人資料按鈕事件
+function startEditProfile() {
+    tempTeacher.name = teachers.name;
+    tempTeacher.email = teachers.email;
+    tempTeacher.country = teachers.country;
+    tempTeacher.course = teachers.course;
+    editingProfile.value = true;
+}
+
+// 儲存個人資料
+function saveProfile() {
+    teachers.name = tempTeacher.name;
+    teachers.email = tempTeacher.email;
+    teachers.country = tempTeacher.country;
+    teachers.course = tempTeacher.course;
+    editingProfile.value = false;
+}
+
+// 取消編輯
+function cancelEditProfile() {
+    editingProfile.value = false;
+}
 
 const bookedStudents = ref([
     {
@@ -87,11 +123,19 @@ const calendarDays = computed(() => {
     // 月曆起始空白格(第一天是星期幾，前面空幾格)
     for (let i = 0; i < firstDayWeek; i++) {
         days.push("");
+
     }
     // 月份日期
     for (let d = 1; d <= totalDays; d++) {
         days.push(d);
     }
+
+    }
+    // 月份日期
+    for (let d = 1; d <= totalDays; d++) {
+        days.push(d);
+    }
+
     // 補足尾部空白(不一定要，讓每週7天整齊)
     while (days.length % 7 !== 0) {
         days.push("");
@@ -261,7 +305,7 @@ function openBulletin() {
             <div
                 class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-10 gap-6"
             >
-                <!-- 左側資訊 -->
+                <!-- 老師資訊卡片 -->
                 <div
                     class="md:col-span-3 bg-white p-4 rounded-lg shadow flex flex-col items-center"
                 >
@@ -270,7 +314,9 @@ function openBulletin() {
                         alt="avatar"
                         class="w-[180px] h-[200px] rounded-lg mb-4 object-cover"
                     />
-                    <p class="text-xl font-bold mb-2">{{ teachers.name }}</p>
+                    <p class="text-xl font-bold mb-2">
+                        {{ teachers.name }}
+                    </p>
                     <p class="text-sm text-gray-600 mb-4">
                         {{ teachers.email }}
                     </p>
@@ -283,22 +329,28 @@ function openBulletin() {
                         >{{ teachers.course }}
                     </p>
 
-                    <div class="grid gap-4 mt-2 w-full">
+                    <!-- 按鈕區 -->
+                    <div class="grid gap-2 mt-4 w-full">
+                        <!-- 其他功能按鈕 -->
                         <button
                             @click="openCalendar"
-                            class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md cursor-pointer w-full text-center"
+                            class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md w-full text-center"
                         >
                             安排行事曆
                         </button>
                         <button
                             @click="openBulletin"
-                            class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md cursor-pointer w-full text-center"
+                            class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md w-full text-center"
                         >
                             公告欄
                         </button>
                         <button
+
+                            class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md w-full text-center"
+
                             @click="router.push('/courseform')"
                             class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md cursor-pointer w-full text-center"
+
                         >
                             建立課程
                         </button>
@@ -369,10 +421,54 @@ function openBulletin() {
                         <div class="bg-white p-4 rounded-lg shadow">
                             <p class="font-semibold text-xl mb-3">設定：</p>
                             <div class="space-y-2 text-sm">
-                                <div
-                                    class="bg-gray-100 hover:bg-gray-200 p-2 rounded cursor-pointer text-base"
+                                <!-- 編輯個人資料按鈕 -->
+                                <button
+                                    @click="editingProfile = !editingProfile"
+                                    class="bg-gray-100 hover:bg-gray-200 p-2 rounded cursor-pointer text-base w-full text-left"
                                 >
                                     編輯個人資料
+                                </button>
+
+                                <!-- 編輯欄位區塊，下拉樣式出現 -->
+                                <div
+                                    v-show="editingProfile"
+                                    class="mt-3 bg-gray-100 p-3 rounded shadow animate-fade"
+                                >
+                                    <input
+                                        v-model="tempTeacher.name"
+                                        class="border rounded p-2 w-full mb-2"
+                                        placeholder="姓名"
+                                    />
+                                    <input
+                                        v-model="tempTeacher.email"
+                                        class="border rounded p-2 w-full mb-2"
+                                        placeholder="Email"
+                                    />
+                                    <input
+                                        v-model="tempTeacher.country"
+                                        class="border rounded p-2 w-full mb-2"
+                                        placeholder="國家"
+                                    />
+                                    <input
+                                        v-model="tempTeacher.course"
+                                        class="border rounded p-2 w-full mb-2"
+                                        placeholder="教學科目"
+                                    />
+
+                                    <div class="flex gap-2 mt-2">
+                                        <button
+                                            @click="saveProfile"
+                                            class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded w-full"
+                                        >
+                                            儲存
+                                        </button>
+                                        <button
+                                            @click="cancelEditProfile"
+                                            class="bg-gray-300 hover:bg-gray-400 text-black py-2 px-4 rounded w-full"
+                                        >
+                                            取消
+                                        </button>
+                                    </div>
                                 </div>
                                 <div
                                     class="bg-gray-100 hover:bg-gray-200 p-2 rounded cursor-pointer text-base"

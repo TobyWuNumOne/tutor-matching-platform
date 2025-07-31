@@ -9,7 +9,35 @@ const students = reactive({
     email: "cody@test.com",
     country: "臺北 Taipei",
     specialization: "國文",
+
+    gender: "男",
+    age: "18",
 });
+
+const isEditing = ref(false); // 是否進入編輯模式
+
+const studentForm = reactive({
+    email: students.email,
+    gender: students.gender,
+    age: students.age,
+});
+
+// 模擬送出表單的函式（實際請串接 API）
+const submitProfileEdit = () => {
+    // 你可以用 fetch / axios 呼叫 API 更新後端資料庫
+    console.log("送出資料：", studentForm);
+
+    // 假設送出成功，就更新畫面顯示用資料
+    students.email = studentForm.email;
+    students.gender = studentForm.gender;
+    students.age = studentForm.age;
+
+    isEditing.value = false;
+};
+
+
+});
+
 
 // 假資料老師
 const bookedTeachers = ref([
@@ -76,6 +104,13 @@ const showAllTeachers = ref(false);
                     <p class="text-gray-600">
                         <span class="font-bold">專精科目：</span
                         >{{ students.specialization }}
+                    </p>
+                    <p class="text-gray-600">
+                        <span class="font-bold">性別：</span
+                        >{{ students.gender }}
+                    </p>
+                    <p class="text-gray-600">
+                        <span class="font-bold">年齡：</span>{{ students.age }}
                     </p>
                 </div>
 
@@ -148,11 +183,59 @@ const showAllTeachers = ref(false);
                     <div class="bg-white p-4 rounded-lg shadow">
                         <p class="font-semibold text-xl mb-3">設定：</p>
                         <div class="space-y-2 text-sm">
+                            <!-- 編輯個人資料 -->
                             <div
                                 class="bg-gray-50 hover:bg-gray-200 p-2 rounded cursor-pointer text-base"
+                                @click="isEditing = !isEditing"
                             >
-                                編輯個人資料
+                                {{ isEditing ? "取消編輯" : "編輯個人資料" }}
                             </div>
+                            <!-- 編輯個人資料表單 -->
+                            <div v-if="isEditing" class="mt-4 space-y-4">
+                                <div>
+                                    <label
+                                        class="block text-sm font-medium text-gray-700"
+                                        >Email：</label
+                                    >
+                                    <input
+                                        v-model="studentForm.email"
+                                        type="email"
+                                        class="mt-1 p-2 block w-full border border-gray-300 rounded"
+                                    />
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-sm font-medium text-gray-700"
+                                        >性別：</label
+                                    >
+                                    <select
+                                        v-model="studentForm.gender"
+                                        class="mt-1 p-2 block w-full border border-gray-300 rounded"
+                                    >
+                                        <option value="">請選擇</option>
+                                        <option value="男">男</option>
+                                        <option value="女">女</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-sm font-medium text-gray-700"
+                                        >年齡：</label
+                                    >
+                                    <input
+                                        v-model="studentForm.age"
+                                        type="text"
+                                        class="mt-1 p-2 block w-full border border-gray-300 rounded"
+                                    />
+                                </div>
+                                <button
+                                    @click="submitProfileEdit"
+                                    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                >
+                                    儲存
+                                </button>
+                            </div>
+
                             <div
                                 class="bg-gray-50 hover:bg-gray-200 p-2 rounded cursor-pointer text-base"
                             >
