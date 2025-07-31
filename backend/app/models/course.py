@@ -4,7 +4,7 @@ class Course(BaseModel):
     __tablename__ = "courses"
 
     subject = db.Column(db.String(255), nullable=False)
-    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id', ondelete='CASCADE'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id', name="fk_courses_teacher_id", ondelete='CASCADE'), nullable=False)
     description = db.Column(db.Text, nullable=True)
     price = db.Column(db.Numeric(8, 2), nullable=False)
     location = db.Column(db.String(255), nullable=False)

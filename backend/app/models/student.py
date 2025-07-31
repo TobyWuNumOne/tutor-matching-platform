@@ -8,7 +8,7 @@ class Student(BaseModel):
     email = db.Column(db.String(120), nullable=False)
     gender = db.Column(db.String(10))
     age = db.Column(db.String(20))
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", name="fk_students_user_id"), nullable=False)
 
     # 關聯
     user = db.relationship("User", back_populates="student_profile")
