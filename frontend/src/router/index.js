@@ -8,8 +8,10 @@ import PersonalDashboard from "../pages/PersonalDashboard.vue";
 import TeacherDashboard from "../pages/TeacherDashboard.vue";
 import TeacherInfoPage from "../pages/TeacherInfoPage.vue";
 import Booking from "../pages/Booking.vue";
+import RegisterTeacher from "../pages/RegisterTeacher.vue";
 import CourseForm from "../pages/CourseForm.vue";
 import ReviewForm from "../pages/ReviewForm.vue";
+
 
 const routes = [
     {
@@ -49,12 +51,17 @@ const routes = [
         component: Booking,
     },
     {
+
+        path: "/register-teacher",
+        component: RegisterTeacher,
+
         path: "/courseform",
         component: CourseForm,
     },
     {
         path: "/reviewform",
         component: ReviewForm,
+
     },
 ];
 
