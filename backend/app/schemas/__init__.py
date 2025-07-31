@@ -6,6 +6,22 @@ from .user_schema import (
 )
 from .teacher_schema import TeacherSchema, TeacherCreateSchema, TeacherUpdateSchema
 from .student_schema import StudentSchema, StudentCreateSchema, StudentUpdateSchema
+from .review_schema import (
+    ReviewSchema,
+    ReviewCreateSchema,
+    ReviewUpdateSchema,
+    CourseBasicSchema,
+)
+from .course_schema import (
+    CourseCreateSchema,
+    CourseUpdateSchema,
+    CourseResponseSchema,
+)
+from .booking_schema import (
+    BookingCreateSchema,
+    BookingUpdateSchema,
+    BookingResponseSchema,
+)
 
 __all__ = [
     "UserSchema",
@@ -18,4 +34,14 @@ __all__ = [
     "StudentSchema",
     "StudentCreateSchema",
     "StudentUpdateSchema",
+    "ReviewSchema",
+    "ReviewCreateSchema",
+    "ReviewUpdateSchema",
+    "CourseBasicSchema",
+    "CourseCreateSchema",
+    "CourseUpdateSchema",
+    "CourseResponseSchema",
+    "BookingCreateSchema",
+    "BookingUpdateSchema",
+    "BookingResponseSchema",
 ]

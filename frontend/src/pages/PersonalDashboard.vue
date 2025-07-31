@@ -9,6 +9,7 @@ const students = reactive({
     email: "cody@test.com",
     country: "臺北 Taipei",
     specialization: "國文",
+
     gender: "男",
     age: "18",
 });
@@ -33,6 +34,10 @@ const submitProfileEdit = () => {
 
     isEditing.value = false;
 };
+
+
+});
+
 
 // 假資料老師
 const bookedTeachers = ref([

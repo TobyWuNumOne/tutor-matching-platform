@@ -3,12 +3,17 @@ import { reactive, ref, computed } from "vue";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
 
+import { useRouter } from "vue-router";
+const router = useRouter();
+
+
 const teachers = reactive({
     name: "老師 A",
     email: "teachera@test.com",
     country: "臺北 Taipei",
     course: "國文",
 });
+
 // 編輯狀態
 const editingProfile = ref(false);
 
@@ -42,6 +47,7 @@ function saveProfile() {
 function cancelEditProfile() {
     editingProfile.value = false;
 }
+
 const bookedStudents = ref([
     {
         name: "學生 A",
@@ -117,11 +123,19 @@ const calendarDays = computed(() => {
     // 月曆起始空白格(第一天是星期幾，前面空幾格)
     for (let i = 0; i < firstDayWeek; i++) {
         days.push("");
+
     }
     // 月份日期
     for (let d = 1; d <= totalDays; d++) {
         days.push(d);
     }
+
+    }
+    // 月份日期
+    for (let d = 1; d <= totalDays; d++) {
+        days.push(d);
+    }
+
     // 補足尾部空白(不一定要，讓每週7天整齊)
     while (days.length % 7 !== 0) {
         days.push("");
@@ -331,9 +345,14 @@ function openBulletin() {
                             公告欄
                         </button>
                         <button
+
                             class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md w-full text-center"
+
+                            @click="router.push('/courseform')"
+                            class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md cursor-pointer w-full text-center"
+
                         >
-                            線上教學課程
+                            建立課程
                         </button>
                     </div>
                 </div>
