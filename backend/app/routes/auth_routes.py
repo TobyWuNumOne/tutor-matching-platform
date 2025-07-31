@@ -13,11 +13,32 @@ from flask_jwt_extended import (
 from app.schemas import UserCreateSchema, UserResponseSchema
 from app.utils.token_blacklist import token_blacklist
 from marshmallow import ValidationError
+from flasgger.utils import swag_from
 
 auth_bp = Blueprint("auth", __name__)
 
 
 @auth_bp.route("/register", methods=["POST"])
+@swag_from(
+    {
+        "tags": ["認證"],
+        "summary": "註冊新用戶",
+        "parameters": [
+            {
+                "name": "body",
+                "in": "body",
+                "schema": {"$ref": "#/definitions/UserCreate"},
+                "required": True,
+                "description": "註冊資料",
+            }
+        ],
+        "responses": {
+            201: {"description": "註冊成功"},
+            400: {"description": "資料驗證失敗"},
+            500: {"description": "伺服器錯誤"},
+        },
+    }
+)
 def register():
     try:
         schema = UserCreateSchema()
@@ -42,6 +63,25 @@ def register():
 
 
 @auth_bp.route("/login", methods=["POST"])
+@swag_from(
+    {
+        "tags": ["認證"],
+        "summary": "用戶登入",
+        "parameters": [
+            {
+                "name": "body",
+                "in": "body",
+                "schema": {"$ref": "#/definitions/UserLogin"},
+                "required": True,
+                "description": "登入資料",
+            }
+        ],
+        "responses": {
+            200: {"description": "登入成功"},
+            401: {"description": "帳號或密碼錯誤"},
+        },
+    }
+)
 def login():
     try:
         data = request.json
@@ -72,6 +112,16 @@ def login():
 
 
 @auth_bp.route("/refresh", methods=["POST"])
+@swag_from(
+    {
+        "tags": ["認證"],
+        "summary": "刷新 access token",
+        "responses": {
+            200: {"description": "刷新成功"},
+            401: {"description": "refresh token 無效"},
+        },
+    }
+)
 @jwt_required(refresh=True)
 def refresh():
     """使用 refresh token 獲取新的 access token"""
@@ -103,6 +153,16 @@ def refresh():
 
 
 @auth_bp.route("/logout", methods=["POST"])
+@swag_from(
+    {
+        "tags": ["認證"],
+        "summary": "登出（access token）",
+        "responses": {
+            200: {"description": "成功登出"},
+            401: {"description": "token 無效"},
+        },
+    }
+)
 @jwt_required()
 def logout():
     """登出 - 將當前access token加入黑名單"""
@@ -120,6 +180,16 @@ def logout():
 
 
 @auth_bp.route("/logout-refresh", methods=["POST"])
+@swag_from(
+    {
+        "tags": ["認證"],
+        "summary": "登出（refresh token）",
+        "responses": {
+            200: {"description": "refresh token 已撤銷"},
+            401: {"description": "token 無效"},
+        },
+    }
+)
 @jwt_required(refresh=True)
 def logout_refresh():
     """登出 refresh token - 將 refresh token 加入黑名單"""
@@ -137,6 +207,16 @@ def logout_refresh():
 
 
 @auth_bp.route("/logout-all", methods=["POST"])
+@swag_from(
+    {
+        "tags": ["認證"],
+        "summary": "登出所有 token",
+        "responses": {
+            200: {"description": "成功登出所有 token"},
+            401: {"description": "token 無效"},
+        },
+    }
+)
 @jwt_required()
 def logout_all():
     """登出所有token - 將access token和對應的refresh token都加入黑名單"""
@@ -158,6 +238,16 @@ def logout_all():
 
 
 @auth_bp.route("/token-status", methods=["GET"])
+@swag_from(
+    {
+        "tags": ["認證"],
+        "summary": "檢查黑名單狀態（僅管理員）",
+        "responses": {
+            200: {"description": "黑名單狀態"},
+            403: {"description": "權限不足"},
+        },
+    }
+)
 @jwt_required()
 def token_status():
     """檢查黑名單狀態（僅管理員可用）"""
