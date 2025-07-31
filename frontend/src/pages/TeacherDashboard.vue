@@ -64,38 +64,40 @@ function cancelEditProfile() {
     editingProfile.value = false;
 }
 
-const bookedStudents = ref([
-    {
-        name: "學生 A",
-        course: "國文",
-        time: "09:00 - 10:00",
-        status: "線上",
-    },
-    {
-        name: "學生 B",
-        course: "英文",
-        time: "10:00 - 11:00",
-        status: "離線",
-    },
-    {
-        name: "學生 C",
-        course: "數學",
-        time: "14:00 - 15:00",
-        status: "線上",
-    },
-    {
-        name: "學生 D",
-        course: "社會",
-        time: "17:00 - 18:00",
-        status: "離線",
-    },
-    {
-        name: "學生 E",
-        course: "自然",
-        time: "20:00 - 21:00",
-        status: "線上",
-    },
-]);
+const bookedStudents = ref([]);
+
+// 取得老師課程及所有 Bookings
+async function fetchTeacherCoursesAndBookings() {
+    try {
+        // 依據你的 API 設計，這裡假設用老師 user_id 查詢
+        const user_id = userInfo.id || userInfo.user_id;
+        const res = await fetch(
+            `http://127.0.0.1:5000/api/course/list?teacher_id=${user_id}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        // 假設 data.data 是課程陣列，每個課程有 bookings 陣列
+        const students = [];
+        (data.data || []).forEach((course) => {
+            (course.bookings || []).forEach((booking) => {
+                students.push({
+                    name: booking.student_name || booking.student?.name || "", // 根據你的資料結構
+                    course: course.subject || course.name || "",
+                    time: booking.time || booking.timeslot || "",
+                    status: booking.status || "",
+                });
+            });
+        });
+        bookedStudents.value = students;
+    } catch (e) {
+        // 可選：錯誤處理
+    }
+}
+
+import { onMounted } from "vue";
+onMounted(() => {
+    fetchTeacherCoursesAndBookings();
+});
 
 const showAllStudents = ref(false);
 const showCalendar = ref(false);
