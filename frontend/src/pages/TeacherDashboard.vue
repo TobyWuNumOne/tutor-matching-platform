@@ -23,22 +23,40 @@ const editingProfile = ref(false);
 
 // 複製老師資料做暫存編輯
 const tempTeacher = reactive({
-    name: "",
-    email: "",
+    name: teachers.name,
+    email: teachers.email,
 });
 
 // 編輯個人資料按鈕事件
-function startEditProfile() {
-    tempTeacher.name = teachers.name;
-    tempTeacher.email = teachers.email;
-    editingProfile.value = true;
-}
-
-// 儲存個人資料
-function saveProfile() {
-    teachers.name = tempTeacher.name;
-    teachers.email = tempTeacher.email;
-    editingProfile.value = false;
+async function saveProfile() {
+    // 1. 呼叫後端 API 更新 Teacher 與 User
+    const user_id = userInfo.id; // 或 userInfo.user_id
+    const payload = {
+        user_id,
+        name: tempTeacher.name,
+        email: tempTeacher.email,
+        // 其他欄位...
+    };
+    try {
+        const res = await fetch("http://127.0.0.1:5000/api/teacher/update", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+            teachers.name = tempTeacher.name;
+            teachers.email = tempTeacher.email;
+            editingProfile.value = false;
+            // 可選：更新 localStorage user_info
+            userInfo.name = tempTeacher.name;
+            userInfo.email = tempTeacher.email;
+            localStorage.setItem("user_info", JSON.stringify(userInfo));
+        } else {
+            // 處理錯誤
+        }
+    } catch (e) {
+        // 處理錯誤
+    }
 }
 
 // 取消編輯
@@ -422,16 +440,6 @@ function openBulletin() {
                                         v-model="tempTeacher.email"
                                         class="border rounded p-2 w-full mb-2"
                                         placeholder="Email"
-                                    />
-                                    <input
-                                        v-model="tempTeacher.country"
-                                        class="border rounded p-2 w-full mb-2"
-                                        placeholder="國家"
-                                    />
-                                    <input
-                                        v-model="tempTeacher.course"
-                                        class="border rounded p-2 w-full mb-2"
-                                        placeholder="教學科目"
                                     />
 
                                     <div class="flex gap-2 mt-2">
