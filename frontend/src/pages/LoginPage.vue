@@ -16,7 +16,7 @@ async function login() {
     errorMsg.value = "";
     loading.value = true;
     try {
-        const res = await fetch("http://localhost:5000/api/auth/login", {
+        const res = await fetch("http://127.0.0.1:5000/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -24,7 +24,14 @@ async function login() {
                 password: password.value,
             }),
         });
-        const data = await res.json();
+        let data = {};
+        try {
+            data = await res.json();
+        } catch (jsonErr) {
+            // 非 JSON 回應
+            errorMsg.value = "伺服器回應格式錯誤，請稍後再試";
+            return;
+        }
         if (res.ok && data.access_token) {
             localStorage.setItem("jwt", data.access_token);
             router.push("/search");
@@ -32,7 +39,7 @@ async function login() {
             errorMsg.value = data.error || "登入失敗，請檢查帳號密碼";
         }
     } catch (e) {
-        errorMsg.value = "伺服器錯誤，請稍後再試";
+        errorMsg.value = "無法連線伺服器，請稍後再試";
     } finally {
         loading.value = false;
     }
