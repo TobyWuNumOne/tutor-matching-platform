@@ -1,258 +1,257 @@
 <script setup>
-    import { reactive, ref, computed } from 'vue';
-    import Navbar from '../components/Navbar.vue';
-    import Footer from '../components/Footer.vue';
+import { reactive, ref, computed } from "vue";
+import Navbar from "../components/Navbar.vue";
+import Footer from "../components/Footer.vue";
+import { useRouter } from "vue-router";
+const router = useRouter();
 
-    const teachers = reactive({
-        name: '老師 A',
-        email: 'teachera@test.com',
-        country: '臺北 Taipei',
-        course: '國文',
-    });
+const teachers = reactive({
+    name: "老師 A",
+    email: "teachera@test.com",
+    country: "臺北 Taipei",
+    course: "國文",
+});
 
-    const bookedStudents = ref([
-        {
-            name: '學生 A',
-            course: '國文',
-            time: '09:00 - 10:00',
-            status: '線上',
-        },
-        {
-            name: '學生 B',
-            course: '英文',
-            time: '10:00 - 11:00',
-            status: '離線',
-        },
-        {
-            name: '學生 C',
-            course: '數學',
-            time: '14:00 - 15:00',
-            status: '線上',
-        },
-        {
-            name: '學生 D',
-            course: '社會',
-            time: '17:00 - 18:00',
-            status: '離線',
-        },
-        {
-            name: '學生 E',
-            course: '自然',
-            time: '20:00 - 21:00',
-            status: '線上',
-        },
-    ]);
+const bookedStudents = ref([
+    {
+        name: "學生 A",
+        course: "國文",
+        time: "09:00 - 10:00",
+        status: "線上",
+    },
+    {
+        name: "學生 B",
+        course: "英文",
+        time: "10:00 - 11:00",
+        status: "離線",
+    },
+    {
+        name: "學生 C",
+        course: "數學",
+        time: "14:00 - 15:00",
+        status: "線上",
+    },
+    {
+        name: "學生 D",
+        course: "社會",
+        time: "17:00 - 18:00",
+        status: "離線",
+    },
+    {
+        name: "學生 E",
+        course: "自然",
+        time: "20:00 - 21:00",
+        status: "線上",
+    },
+]);
 
-    const showAllStudents = ref(false);
-    const showCalendar = ref(false);
-    const showBulletin = ref(false);
-    const showModal = ref(false);
-    const selectedDate = ref('');
-    const selectedPeriod = ref('');
-    const scheduleStatus = ref('');
+const showAllStudents = ref(false);
+const showCalendar = ref(false);
+const showBulletin = ref(false);
+const showModal = ref(false);
+const selectedDate = ref("");
+const selectedPeriod = ref("");
+const scheduleStatus = ref("");
 
-    // 2025年7月固定示範，可改成動態邏輯
-    const currentYear = ref(2025);
-    const currentMonth = ref(7); // 7月
+// 2025年7月固定示範，可改成動態邏輯
+const currentYear = ref(2025);
+const currentMonth = ref(7); // 7月
 
-    // 上午下午晚上狀態資料，格式：{ 'YYYY-MM-DD': { morning: true/false, afternoon: true/false, evening: true/false } }
-    const availability = reactive({});
+// 上午下午晚上狀態資料，格式：{ 'YYYY-MM-DD': { morning: true/false, afternoon: true/false, evening: true/false } }
+const availability = reactive({});
 
-    // 公告欄相關
-    const newAnnouncement = reactive({
-        title: '',
-        content: '',
-    });
+// 公告欄相關
+const newAnnouncement = reactive({
+    title: "",
+    content: "",
+});
 
-    const announcements = reactive([]);
+const announcements = reactive([]);
 
-    // 判斷該日期的星期幾 0(日)~6(六)
-    function getDayOfWeek(year, month, day) {
-        return new Date(year, month - 1, day).getDay();
+// 判斷該日期的星期幾 0(日)~6(六)
+function getDayOfWeek(year, month, day) {
+    return new Date(year, month - 1, day).getDay();
+}
+
+// 該月份天數
+function getDaysInMonth(year, month) {
+    return new Date(year, month, 0).getDate();
+}
+
+// 生成完整月曆格子 (陣列內元素是日期號碼或空字串代表空格)
+const calendarDays = computed(() => {
+    const days = [];
+    const firstDayWeek = getDayOfWeek(currentYear.value, currentMonth.value, 1);
+    const totalDays = getDaysInMonth(currentYear.value, currentMonth.value);
+
+    // 月曆起始空白格(第一天是星期幾，前面空幾格)
+    for (let i = 0; i < firstDayWeek; i++) {
+        days.push("");
     }
-
-    // 該月份天數
-    function getDaysInMonth(year, month) {
-        return new Date(year, month, 0).getDate();
+    // 月份日期
+    for (let d = 1; d <= totalDays; d++) {
+        days.push(d);
     }
-
-    // 生成完整月曆格子 (陣列內元素是日期號碼或空字串代表空格)
-    const calendarDays = computed(() => {
-        const days = [];
-        const firstDayWeek = getDayOfWeek(
-            currentYear.value,
-            currentMonth.value,
-            1
-        );
-        const totalDays = getDaysInMonth(currentYear.value, currentMonth.value);
-
-        // 月曆起始空白格(第一天是星期幾，前面空幾格)
-        for (let i = 0; i < firstDayWeek; i++) {
-            days.push('');
-        }
-        // 月份日期
-        for (let d = 1; d <= totalDays; d++) {
-            days.push(d);
-        }
-        // 補足尾部空白(不一定要，讓每週7天整齊)
-        while (days.length % 7 !== 0) {
-            days.push('');
-        }
-        return days;
-    });
-
-    // 周日固定灰色且不可點擊
-    function isSunday(day) {
-        if (!day) return false;
-        return getDayOfWeek(currentYear.value, currentMonth.value, day) === 0;
+    // 補足尾部空白(不一定要，讓每週7天整齊)
+    while (days.length % 7 !== 0) {
+        days.push("");
     }
+    return days;
+});
 
-    // 該日期是否所有時段都是不可預約(默認為可預約)
-    function isAllUnavailable(day) {
-        if (!day) return false;
-        const dateKey = `${currentYear.value}-${String(
-            currentMonth.value
-        ).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayStatus = availability[dateKey];
-        if (!dayStatus) return false; // 無設定代表可預約
-        return !dayStatus.morning && !dayStatus.afternoon && !dayStatus.evening;
-    }
+// 周日固定灰色且不可點擊
+function isSunday(day) {
+    if (!day) return false;
+    return getDayOfWeek(currentYear.value, currentMonth.value, day) === 0;
+}
 
-    // 格子底色判斷
-    function getDayBgColor(day) {
-        if (!day) return 'bg-transparent';
-        if (isSunday(day)) return 'bg-gray-300 cursor-not-allowed';
-        if (isAllUnavailable(day)) return 'bg-red-300 cursor-pointer';
-        return 'bg-green-300 cursor-pointer';
-    }
+// 該日期是否所有時段都是不可預約(默認為可預約)
+function isAllUnavailable(day) {
+    if (!day) return false;
+    const dateKey = `${currentYear.value}-${String(currentMonth.value).padStart(
+        2,
+        "0"
+    )}-${String(day).padStart(2, "0")}`;
+    const dayStatus = availability[dateKey];
+    if (!dayStatus) return false; // 無設定代表可預約
+    return !dayStatus.morning && !dayStatus.afternoon && !dayStatus.evening;
+}
 
-    // 點日期時，設定 selectedDate 且 showModal 打開
-    function onClickDate(day) {
-        if (!day) return;
-        if (isSunday(day)) return;
-        selectedDate.value = `${currentYear.value}-${String(
-            currentMonth.value
-        ).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        showModal.value = false;
-    }
+// 格子底色判斷
+function getDayBgColor(day) {
+    if (!day) return "bg-transparent";
+    if (isSunday(day)) return "bg-gray-300 cursor-not-allowed";
+    if (isAllUnavailable(day)) return "bg-red-300 cursor-pointer";
+    return "bg-green-300 cursor-pointer";
+}
 
-    // 打開modal設定時段狀態
-    function openSchedule(period) {
-        selectedPeriod.value = period;
-        if (!selectedDate.value) return;
-        // 讀取現有狀態或預設true（可預約）
-        const dateKey = selectedDate.value;
-        const dayStatus = availability[dateKey] || {
+// 點日期時，設定 selectedDate 且 showModal 打開
+function onClickDate(day) {
+    if (!day) return;
+    if (isSunday(day)) return;
+    selectedDate.value = `${currentYear.value}-${String(
+        currentMonth.value
+    ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    showModal.value = false;
+}
+
+// 打開modal設定時段狀態
+function openSchedule(period) {
+    selectedPeriod.value = period;
+    if (!selectedDate.value) return;
+    // 讀取現有狀態或預設true（可預約）
+    const dateKey = selectedDate.value;
+    const dayStatus = availability[dateKey] || {
+        morning: true,
+        afternoon: true,
+        evening: true,
+    };
+    scheduleStatus.value = dayStatus[periodMapToKey(period)];
+    showModal.value = true;
+}
+
+// 確認狀態(可預約或不可預約)
+function confirmStatus(status) {
+    if (!selectedDate.value) return;
+    const dateKey = selectedDate.value;
+    if (!availability[dateKey]) {
+        availability[dateKey] = {
             morning: true,
             afternoon: true,
             evening: true,
         };
-        scheduleStatus.value = dayStatus[periodMapToKey(period)];
-        showModal.value = true;
     }
+    availability[dateKey][periodMapToKey(selectedPeriod.value)] =
+        status === "可預約";
+    scheduleStatus.value = status;
+    showModal.value = false;
+}
 
-    // 確認狀態(可預約或不可預約)
-    function confirmStatus(status) {
-        if (!selectedDate.value) return;
-        const dateKey = selectedDate.value;
-        if (!availability[dateKey]) {
-            availability[dateKey] = {
-                morning: true,
-                afternoon: true,
-                evening: true,
-            };
-        }
-        availability[dateKey][periodMapToKey(selectedPeriod.value)] =
-            status === '可預約';
-        scheduleStatus.value = status;
-        showModal.value = false;
-    }
+// 取消modal
+function cancelModal() {
+    showModal.value = false;
+}
 
-    // 取消modal
-    function cancelModal() {
-        showModal.value = false;
+// period 字串對應 availability key
+function periodMapToKey(period) {
+    switch (period) {
+        case "上午":
+            return "morning";
+        case "下午":
+            return "afternoon";
+        case "晚上":
+            return "evening";
     }
+    return "";
+}
 
-    // period 字串對應 availability key
-    function periodMapToKey(period) {
-        switch (period) {
-            case '上午':
-                return 'morning';
-            case '下午':
-                return 'afternoon';
-            case '晚上':
-                return 'evening';
-        }
-        return '';
-    }
+// 讀取某天某時段狀態
+function getPeriodStatus(dateStr, period) {
+    const dayStatus = availability[dateStr];
+    if (!dayStatus) return "可預約";
+    return dayStatus[periodMapToKey(period)] ? "可預約" : "不可預約";
+}
 
-    // 讀取某天某時段狀態
-    function getPeriodStatus(dateStr, period) {
-        const dayStatus = availability[dateStr];
-        if (!dayStatus) return '可預約';
-        return dayStatus[periodMapToKey(period)] ? '可預約' : '不可預約';
+// 切換月份
+function prevMonth() {
+    if (currentMonth.value === 1) {
+        currentYear.value--;
+        currentMonth.value = 12;
+    } else {
+        currentMonth.value--;
     }
+    selectedDate.value = "";
+    showModal.value = false;
+}
 
-    // 切換月份
-    function prevMonth() {
-        if (currentMonth.value === 1) {
-            currentYear.value--;
-            currentMonth.value = 12;
-        } else {
-            currentMonth.value--;
-        }
-        selectedDate.value = '';
-        showModal.value = false;
+function nextMonth() {
+    if (currentMonth.value === 12) {
+        currentYear.value++;
+        currentMonth.value = 1;
+    } else {
+        currentMonth.value++;
     }
+    selectedDate.value = "";
+    showModal.value = false;
+}
 
-    function nextMonth() {
-        if (currentMonth.value === 12) {
-            currentYear.value++;
-            currentMonth.value = 1;
-        } else {
-            currentMonth.value++;
-        }
-        selectedDate.value = '';
-        showModal.value = false;
-    }
+// 公告欄相關功能
+function clearAnnouncement() {
+    newAnnouncement.title = "";
+    newAnnouncement.content = "";
+}
 
-    // 公告欄相關功能
-    function clearAnnouncement() {
-        newAnnouncement.title = '';
-        newAnnouncement.content = '';
+function publishAnnouncement() {
+    if (!newAnnouncement.title.trim() || !newAnnouncement.content.trim()) {
+        alert("請輸入標題與內容");
+        return;
     }
+    announcements.push({
+        title: newAnnouncement.title,
+        content: newAnnouncement.content,
+        date: new Date().toLocaleString(),
+        editable: false,
+    });
+    clearAnnouncement();
+}
 
-    function publishAnnouncement() {
-        if (!newAnnouncement.title.trim() || !newAnnouncement.content.trim()) {
-            alert('請輸入標題與內容');
-            return;
-        }
-        announcements.push({
-            title: newAnnouncement.title,
-            content: newAnnouncement.content,
-            date: new Date().toLocaleString(),
-            editable: false,
-        });
-        clearAnnouncement();
-    }
+function toggleEdit(i) {
+    announcements[i].editable = !announcements[i].editable;
+}
 
-    function toggleEdit(i) {
-        announcements[i].editable = !announcements[i].editable;
-    }
+function deleteAnnouncement(i) {
+    announcements.splice(i, 1);
+}
 
-    function deleteAnnouncement(i) {
-        announcements.splice(i, 1);
-    }
-
-    // 修改按鈕點擊事件修正(直接呼叫方法)
-    function openCalendar() {
-        showCalendar.value = true;
-        showBulletin.value = false;
-    }
-    function openBulletin() {
-        showBulletin.value = true;
-        showCalendar.value = false;
-    }
+// 修改按鈕點擊事件修正(直接呼叫方法)
+function openCalendar() {
+    showCalendar.value = true;
+    showBulletin.value = false;
+}
+function openBulletin() {
+    showBulletin.value = true;
+    showCalendar.value = false;
+}
 </script>
 
 <template>
@@ -298,9 +297,10 @@
                             公告欄
                         </button>
                         <button
+                            @click="router.push('/courseform')"
                             class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md cursor-pointer w-full text-center"
                         >
-                            線上教學課程
+                            建立課程
                         </button>
                     </div>
                 </div>
@@ -345,7 +345,7 @@
                                 </p>
                                 <p class="text-left md:w-1/4">
                                     <span class="font-bold">預約時間：</span
-                                    >{{ student.time || '未填寫' }}
+                                    >{{ student.time || "未填寫" }}
                                 </p>
                             </div>
                             <div
@@ -358,8 +358,8 @@
                                 >
                                     {{
                                         showAllStudents
-                                            ? '顯示較少'
-                                            : '查看更多...'
+                                            ? "顯示較少"
+                                            : "查看更多..."
                                     }}
                                 </button>
                             </div>
@@ -492,7 +492,7 @@
                                     >
                                         {{
                                             calendarDays[wIndex * 7 + d - 1] ||
-                                            ''
+                                            ""
                                         }}
                                     </td>
                                 </tr>
@@ -655,7 +655,7 @@
                                         @click="toggleEdit(i)"
                                         class="text-blue-600 hover:underline cursor-pointer"
                                     >
-                                        {{ a.editable ? '完成' : '編輯' }}
+                                        {{ a.editable ? "完成" : "編輯" }}
                                     </button>
                                     <button
                                         @click="deleteAnnouncement(i)"
@@ -684,8 +684,8 @@
 </template>
 
 <style scoped>
-    /* 讓不可點的日曆格子無法點擊，cursor 是 not-allowed */
-    .cursor-not-allowed {
-        cursor: not-allowed !important;
-    }
+/* 讓不可點的日曆格子無法點擊，cursor 是 not-allowed */
+.cursor-not-allowed {
+    cursor: not-allowed !important;
+}
 </style>

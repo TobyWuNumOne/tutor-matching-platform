@@ -1,51 +1,51 @@
 <script setup>
-    import { reactive, ref } from 'vue';
-    import Navbar from '../components/Navbar.vue';
-    import Footer from '../components/Footer.vue';
+import { reactive, ref } from "vue";
+import Navbar from "../components/Navbar.vue";
+import Footer from "../components/Footer.vue";
 
-    // 個人資料
-    const students = reactive({
-        name: 'Cody',
-        email: 'cody@test.com',
-        country: '臺北 Taipei',
-        specialization: '國文',
-    });
+// 個人資料
+const students = reactive({
+    name: "Cody",
+    email: "cody@test.com",
+    country: "臺北 Taipei",
+    specialization: "國文",
+});
 
-    // 假資料老師
-    const bookedTeachers = ref([
-        {
-            name: '老師 A',
-            course: '國文',
-            time: '09:00 - 10:00',
-            status: '可預約',
-        },
-        {
-            name: '老師 B',
-            course: '英文',
-            time: '10:00 - 11:00',
-            status: '不可預約',
-        },
-        {
-            name: '老師 C',
-            course: '數學',
-            time: '14:00 - 15:00',
-            status: '可預約',
-        },
-        {
-            name: '老師 D',
-            course: '社會',
-            time: '17:00 - 18:00',
-            status: '不可預約',
-        },
-        {
-            name: '老師 E',
-            course: '自然',
-            time: '20:00 - 21:00',
-            status: '可預約',
-        },
-    ]);
+// 假資料老師
+const bookedTeachers = ref([
+    {
+        name: "老師 A",
+        course: "國文",
+        time: "09:00 - 10:00",
+        status: "可預約",
+    },
+    {
+        name: "老師 B",
+        course: "英文",
+        time: "10:00 - 11:00",
+        status: "不可預約",
+    },
+    {
+        name: "老師 C",
+        course: "數學",
+        time: "14:00 - 15:00",
+        status: "可預約",
+    },
+    {
+        name: "老師 D",
+        course: "社會",
+        time: "17:00 - 18:00",
+        status: "不可預約",
+    },
+    {
+        name: "老師 E",
+        course: "自然",
+        time: "20:00 - 21:00",
+        status: "可預約",
+    },
+]);
 
-    const showAllTeachers = ref(false);
+const showAllTeachers = ref(false);
 </script>
 
 <template>
@@ -124,7 +124,7 @@
                             <!-- 預約時間 -->
                             <p class="text-left md:w-1/4">
                                 <span class="font-bold">預約時間：</span>
-                                <span>{{ teacher.time || '未填寫' }}</span>
+                                <span>{{ teacher.time || "未填寫" }}</span>
                             </p>
                         </div>
 
@@ -138,7 +138,7 @@
                                 @click="showAllTeachers = !showAllTeachers"
                             >
                                 {{
-                                    showAllTeachers ? '顯示較少' : '查看更多...'
+                                    showAllTeachers ? "顯示較少" : "查看更多..."
                                 }}
                             </button>
                         </div>
