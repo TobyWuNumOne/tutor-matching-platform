@@ -202,7 +202,9 @@ def create_teacher():
         
         # 建立新老師資料
         new_teacher = Teacher(**data)
-        
+        # 設定使用者角色為老師
+        user = User.query.get(data['user_id'])
+        user.role = "teacher"
         # 儲存到資料庫
         db.session.add(new_teacher)
         db.session.commit()
