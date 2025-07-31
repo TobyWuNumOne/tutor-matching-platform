@@ -5,8 +5,8 @@ from .model import BaseModel
 class Booking(BaseModel):
     __tablename__ = "bookings"
 
-    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
-    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id', name="fk_bookings_course_id"), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', name="fk_bookings_student_id"), nullable=False)
     schedule_date = db.Column(db.String(50), nullable=False)  # 可以存 "2024-01-15 14:00" 格式
     status = db.Column(db.String(20), nullable=False, default='pending')  # pending, confirmed, completed, cancelled
     
