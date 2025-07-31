@@ -104,9 +104,14 @@ def login():
         user = User.query.filter_by(account=data.get("account")).first()
 
         if user and user.check_password(data.get("password")):
-            # 創建 access token 和 refresh token
-            access_token = create_access_token(identity=str(user.id))
-            refresh_token = create_refresh_token(identity=str(user.id))
+            # 自訂 payload，將帳號與名稱等資訊放進 JWT
+            additional_claims = {
+                "account": user.account,
+                "name": user.name,
+                "role": user.role
+            }
+            access_token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
+            refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
 
             return (
                 jsonify(

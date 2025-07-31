@@ -34,6 +34,10 @@ async function login() {
         }
         if (res.ok && data.access_token) {
             localStorage.setItem("jwt", data.access_token);
+            // 額外存一份用戶資訊
+            if (data.user) {
+                localStorage.setItem("user_info", JSON.stringify(data.user));
+            }
             router.push("/search");
         } else {
             errorMsg.value = data.error || "登入失敗，請檢查帳號密碼";

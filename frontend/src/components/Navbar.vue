@@ -6,6 +6,8 @@ const languages = ["繁體中文(TW)", "簡體中文(CN)", "英文 (ENG)", "日�
 const selectedLang = ref(localStorage.getItem("lang") || languages[0]);
 const login = ref(false);
 const role = ref("both"); // 可從後端或登入狀態取得
+const userAccount = ref("");
+const userName = ref("");
 const showMenu = ref(false);
 const router = useRouter();
 const route = useRoute();
@@ -21,7 +23,23 @@ function handleLanguageChange() {
 }
 
 function checkLogin() {
-    login.value = !!localStorage.getItem("jwt");
+    const jwt = localStorage.getItem("jwt");
+    login.value = !!jwt;
+    if (jwt) {
+        try {
+            const payload = JSON.parse(atob(jwt.split(".")[1]));
+            // 假設 payload 有 account, username 欄位，請根據實際欄位調整
+            userAccount.value =
+                payload.account || payload.email || payload.sub || "";
+            userName.value = payload.username || payload.name || "";
+        } catch (e) {
+            userAccount.value = "";
+            userName.value = "";
+        }
+    } else {
+        userAccount.value = "";
+        userName.value = "";
+    }
 }
 
 function handleLogout() {
@@ -113,6 +131,10 @@ watch(
                 </RouterLink>
             </template>
             <template v-else>
+                <span class="text-white mr-2 flex flex-col items-end text-xs">
+                    <span v-if="userAccount">帳號：{{ userAccount }}</span>
+                    <span v-if="userName">使用者名稱：{{ userName }}</span>
+                </span>
                 <button
                     @click="handleLogout"
                     class="w-[98px] h-[40px] border border-white text-white bg-[#3F3FF0] rounded-md hover:bg-white hover:text-[#3F3FF0] transition cursor-pointer"
