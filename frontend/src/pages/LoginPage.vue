@@ -38,7 +38,7 @@ async function login() {
             if (data.user) {
                 localStorage.setItem("user_info", JSON.stringify(data.user));
             }
-            router.push("/search");
+            router.push("/personaldashboard"); // 登入成功後導向個人頁面
         } else {
             errorMsg.value = data.error || "登入失敗，請檢查帳號密碼";
         }
