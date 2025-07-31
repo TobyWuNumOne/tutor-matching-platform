@@ -18,7 +18,17 @@ user_bp = Blueprint("user", __name__)
             'description': '用戶列表',
             'schema': {
                 'type': 'array',
-                'items': {'$ref': '#/definitions/UserResponse'}
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'id': {'type': 'integer', 'example': 1},
+                        'name': {'type': 'string', 'example': '王小明'},
+                        'account': {'type': 'string', 'example': 'user123'},
+                        'role': {'type': 'string', 'example': 'student'},
+                        'created_at': {'type': 'string', 'example': '2024-07-31T10:00:00'},
+                        'updated_at': {'type': 'string', 'example': '2024-07-31T10:00:00'}
+                    }
+                }
             }
         }
     }
@@ -48,7 +58,17 @@ def get_all_users():
     'responses': {
         200: {
             'description': '用戶資料',
-            'schema': {'$ref': '#/definitions/UserResponse'}
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'id': {'type': 'integer', 'example': 1},
+                    'name': {'type': 'string', 'example': '王小明'},
+                    'account': {'type': 'string', 'example': 'user123'},
+                    'role': {'type': 'string', 'example': 'student'},
+                    'created_at': {'type': 'string', 'example': '2024-07-31T10:00:00'},
+                    'updated_at': {'type': 'string', 'example': '2024-07-31T10:00:00'}
+                }
+            }
         },
         403: {'description': '權限不足'},
         404: {'description': '找不到用戶'}
@@ -89,13 +109,34 @@ def get_user(user_id):
         {
             'name': 'body',
             'in': 'body',
-            'schema': {'$ref': '#/definitions/UserUpdate'},
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'name': {'type': 'string', 'example': '王小明'},
+                    'account': {'type': 'string', 'example': 'user123'},
+                    'password': {'type': 'string', 'example': '12345678'},
+                    'role': {'type': 'string', 'enum': ['teacher', 'student', 'admin'], 'example': 'student'}
+                }
+            },
             'required': True,
             'description': '要更新的欄位'
         }
     ],
     'responses': {
-        200: {'description': '更新後的用戶資料', 'schema': {'$ref': '#/definitions/UserResponse'}},
+        200: {
+            'description': '更新後的用戶資料',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'id': {'type': 'integer', 'example': 1},
+                    'name': {'type': 'string', 'example': '王小明'},
+                    'account': {'type': 'string', 'example': 'user123'},
+                    'role': {'type': 'string', 'example': 'student'},
+                    'created_at': {'type': 'string', 'example': '2024-07-31T10:00:00'},
+                    'updated_at': {'type': 'string', 'example': '2024-07-31T10:00:00'}
+                }
+            }
+        },
         403: {'description': '權限不足'},
         404: {'description': '找不到用戶'}
     }

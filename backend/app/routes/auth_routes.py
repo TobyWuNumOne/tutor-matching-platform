@@ -27,7 +27,16 @@ auth_bp = Blueprint("auth", __name__)
             {
                 "name": "body",
                 "in": "body",
-                "schema": {"$ref": "#/definitions/UserCreate"},
+                "schema": {
+                    "type": "object",
+                    "required": ["name", "account", "password", "role"],
+                    "properties": {
+                        "name": {"type": "string", "example": "王小明"},
+                        "account": {"type": "string", "example": "user123"},
+                        "password": {"type": "string", "example": "12345678"},
+                        "role": {"type": "string", "enum": ["teacher", "student", "admin"], "example": "student"}
+                    }
+                },
                 "required": True,
                 "description": "註冊資料",
             }
@@ -71,7 +80,14 @@ def register():
             {
                 "name": "body",
                 "in": "body",
-                "schema": {"$ref": "#/definitions/UserLogin"},
+                "schema": {
+                    "type": "object",
+                    "required": ["account", "password"],
+                    "properties": {
+                        "account": {"type": "string", "example": "user123"},
+                        "password": {"type": "string", "example": "12345678"}
+                    }
+                },
                 "required": True,
                 "description": "登入資料",
             }
