@@ -3,12 +3,26 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models.user import User
 from app.schemas.user_schema import UserResponseSchema
 from app.utils.auth_required import admin_required
+from flasgger.utils import swag_from
 
 user_bp = Blueprint("user", __name__)
 
 
 # Get all users (admin only)
 @user_bp.route("", methods=["GET"])
+@swag_from({
+    'tags': ['用戶'],
+    'summary': '取得所有用戶（僅限管理員）',
+    'responses': {
+        200: {
+            'description': '用戶列表',
+            'schema': {
+                'type': 'array',
+                'items': {'$ref': '#/definitions/UserResponse'}
+            }
+        }
+    }
+})
 @jwt_required()
 @admin_required
 def get_all_users():
@@ -19,6 +33,27 @@ def get_all_users():
 
 # Get user by ID
 @user_bp.route("/<int:user_id>", methods=["GET"])
+@swag_from({
+    'tags': ['用戶'],
+    'summary': '依ID取得用戶',
+    'parameters': [
+        {
+            'name': 'user_id',
+            'in': 'path',
+            'type': 'integer',
+            'required': True,
+            'description': '用戶ID'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': '用戶資料',
+            'schema': {'$ref': '#/definitions/UserResponse'}
+        },
+        403: {'description': '權限不足'},
+        404: {'description': '找不到用戶'}
+    }
+})
 @jwt_required()
 def get_user(user_id):
     # Get current user's ID from token
@@ -40,6 +75,31 @@ def get_user(user_id):
 
 # Update user by ID (only own account or admin)
 @user_bp.route("/<int:user_id>", methods=["PUT"])
+@swag_from({
+    'tags': ['用戶'],
+    'summary': '更新用戶資料',
+    'parameters': [
+        {
+            'name': 'user_id',
+            'in': 'path',
+            'type': 'integer',
+            'required': True,
+            'description': '用戶ID'
+        },
+        {
+            'name': 'body',
+            'in': 'body',
+            'schema': {'$ref': '#/definitions/UserUpdate'},
+            'required': True,
+            'description': '要更新的欄位'
+        }
+    ],
+    'responses': {
+        200: {'description': '更新後的用戶資料', 'schema': {'$ref': '#/definitions/UserResponse'}},
+        403: {'description': '權限不足'},
+        404: {'description': '找不到用戶'}
+    }
+})
 @jwt_required()
 def update_user(user_id):
     # Get current user's ID from token
@@ -80,6 +140,23 @@ def update_user(user_id):
 
 # Delete user (admin only)
 @user_bp.route("/<int:user_id>", methods=["DELETE"])
+@swag_from({
+    'tags': ['用戶'],
+    'summary': '刪除用戶（僅限管理員）',
+    'parameters': [
+        {
+            'name': 'user_id',
+            'in': 'path',
+            'type': 'integer',
+            'required': True,
+            'description': '用戶ID'
+        }
+    ],
+    'responses': {
+        200: {'description': '刪除成功'},
+        404: {'description': '找不到用戶'}
+    }
+})
 @jwt_required()
 @admin_required
 def delete_user(user_id):
