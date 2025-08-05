@@ -13,11 +13,7 @@ from app.schemas.booking_schema import (
 from app.extensions import db
 from app.utils.auth_required import auth_required
 
-# 創建 schema 實例
-booking_create_schema = BookingCreateSchema()
-booking_update_schema = BookingUpdateSchema()
-booking_response_schema = BookingResponseSchema()
-booking_response_schema_many = BookingResponseSchema(many=True)
+# 不在全局創建 schema 實例，改為在函數內創建
 
 booking_bp = Blueprint('bookings', __name__)
 
@@ -123,6 +119,7 @@ def create_booking():
     try:
         # 使用 schema 驗證資料
         try:
+            booking_create_schema = BookingCreateSchema()
             validated_data = booking_create_schema.load(request.json)
         except ValidationError as err:
             return jsonify({
@@ -179,6 +176,7 @@ def create_booking():
         ).get(new_booking.id)
         
         # 使用 schema 序列化回應
+        booking_response_schema = BookingResponseSchema()
         response_data = booking_response_schema.dump(booking_with_relations)
         
         return jsonify({

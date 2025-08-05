@@ -96,9 +96,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
+import { bookingAPI, courseAPI, authAPI } from '../utils/api.js';
 
 // 教師資料
 const teacher = ref({
@@ -108,6 +109,12 @@ const teacher = ref({
     schedule: "星期一 晚上7:00~8:00 / 星期四 晚上6:00~7:00",
     rating: 4,
 });
+
+// 當前用戶和預約資訊
+const currentUser = ref(null);
+const userBookings = ref([]);
+const loading = ref(false);
+const error = ref('');
 
 // 當前日期與所選日期
 const today = new Date();
@@ -193,11 +200,87 @@ function getButtonClass(slot) {
     return "bg-blue-600 text-white hover:bg-blue-700";
 }
 
+// 獲取用戶資訊和預約資料
+const fetchUserData = async () => {
+    loading.value = true;
+    error.value = '';
+    
+    try {
+        // 獲取當前用戶資訊
+        const userResponse = await authAPI.getCurrentUser();
+        currentUser.value = userResponse.data;
+        console.log('✅ 用戶資訊:', currentUser.value);
+        
+        // 獲取用戶的預約列表
+        await fetchUserBookings();
+        
+    } catch (err) {
+        console.error('獲取用戶資料失敗:', err);
+        error.value = '無法載入用戶資料';
+    } finally {
+        loading.value = false;
+    }
+};
+
+// 獲取用戶預約列表
+const fetchUserBookings = async () => {
+    try {
+        const response = await bookingAPI.getAllBookings();
+        if (response.data.success) {
+            userBookings.value = response.data.data;
+            console.log('✅ 預約列表:', userBookings.value);
+        }
+    } catch (err) {
+        console.error('獲取預約列表失敗:', err);
+    }
+};
+
+// 創建新預約
+const createBooking = async (courseId, scheduleDate, timeSlot) => {
+    try {
+        const bookingData = {
+            course_id: courseId,
+            student_id: 5, // 使用已知的學生ID
+            schedule_date: `${scheduleDate} ${timeSlot.replace('am', ':00').replace('pm', ':00')}`
+        };
+        
+        const response = await bookingAPI.createBooking(bookingData);
+        if (response.data.success) {
+            console.log('✅ 預約創建成功:', response.data);
+            await fetchUserBookings(); // 重新載入預約列表
+            return true;
+        }
+    } catch (err) {
+        console.error('創建預約失敗:', err);
+        return false;
+    }
+};
+
 // 預約事件
-function bookSlot(slot) {
+async function bookSlot(slot) {
     if (isSlotDisabled(slot)) return;
-    alert(`預約 ${selectedDate.value.toDateString()} 的 ${slot}`);
+    
+    if (!currentUser.value) {
+        alert('請先登入才能預約');
+        return;
+    }
+    
+    const confirmed = confirm(`確定要預約 ${selectedDate.value.toDateString()} 的 ${slot} 嗎？`);
+    if (confirmed) {
+        const success = await createBooking(1, selectedDate.value.toISOString().split('T')[0], slot);
+        if (success) {
+            alert(`預約成功！${selectedDate.value.toDateString()} 的 ${slot}`);
+        } else {
+            alert('預約失敗，請稍後再試');
+        }
+    }
 }
+
+// 頁面載入時獲取資料
+onMounted(() => {
+    console.log('🚀 Booking頁面載入，開始獲取資料...');
+    fetchUserData();
+});
 </script>
 
 <style scoped>

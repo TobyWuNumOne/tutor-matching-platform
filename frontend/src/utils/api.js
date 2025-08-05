@@ -117,8 +117,8 @@ export const studentAPI = {
     // 註冊成為學生
     registerStudent: (studentData) => api.post('/student/register', studentData),
     
-    // 獲取學生資訊
-    getStudentInfo: () => api.get('/student/profile'),
+    // 根據用戶ID獲取學生資訊
+    getStudentByUserId: (userId) => api.get(`/student/user/${userId}`),
     
     // 更新學生資訊
     updateStudentInfo: (studentData) => api.put('/student/profile', studentData),
@@ -129,17 +129,26 @@ export const bookingAPI = {
     // 創建預約
     createBooking: (bookingData) => api.post('/booking/create', bookingData),
     
-    // 獲取用戶的預約
+    // 獲取所有預約列表
+    getAllBookings: (params) => api.get('/booking/list', { params }),
+    
+    // 獲取單一預約
+    getBooking: (bookingId) => api.get(`/booking/${bookingId}`),
+    
+    // 更新預約
+    updateBooking: (bookingId, bookingData) => api.put(`/booking/${bookingId}`, bookingData),
+    
+    // 刪除預約
+    deleteBooking: (bookingId) => api.delete(`/booking/${bookingId}`),
+    
+    // 獲取用戶的預約 (需要後端新增)
     getUserBookings: () => api.get('/booking/user'),
     
-    // 獲取老師的預約
+    // 獲取老師的預約 (需要後端新增)
     getTeacherBookings: () => api.get('/booking/teacher'),
     
-    // 更新預約狀態
+    // 更新預約狀態 (需要後端新增)
     updateBookingStatus: (bookingId, status) => api.put(`/booking/${bookingId}/status`, { status }),
-    
-    // 取消預約
-    cancelBooking: (bookingId) => api.delete(`/booking/${bookingId}`),
 };
 
 // 評價相關 API
