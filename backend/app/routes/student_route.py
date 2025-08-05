@@ -5,8 +5,58 @@ from app.models.student import Student
 from app.models.user import User
 from app.schemas.student_schema import StudentSchema, StudentCreateSchema, StudentUpdateSchema
 from app.extensions import db
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 student_bp = Blueprint('students', __name__)
+
+@student_bp.route('/profile', methods=['GET'])
+@swag_from({
+    'tags': ['學生管理'],
+    'summary': '獲取當前用戶的學生資訊',
+    'description': '自動從JWT token獲取當前用戶ID並返回學生資料',
+    'responses': {
+        200: {'description': '成功獲取學生資訊'},
+        404: {'description': '找不到學生資料'},
+        401: {'description': '未授權'}
+    }
+})
+@jwt_required()
+def get_current_student_profile():
+    """獲取當前登入用戶的學生資訊"""
+    try:
+        # 從JWT token中獲取當前用戶ID
+        current_user_id = get_jwt_identity()
+        user_id = int(current_user_id)
+        
+        # 查找學生資料
+        student = Student.query.filter_by(user_id=user_id).first()
+        if not student:
+            return jsonify({
+                'success': False,
+                'message': '找不到學生資料'
+            }), 404
+
+        # 返回學生資料
+        student_data = {
+            'id': student.id,
+            'user_id': student.user_id,
+            'email': student.email,
+            'gender': student.gender,
+            'age': student.age,
+            'created_at': student.created_at.isoformat() if student.created_at else None,
+            'updated_at': student.updated_at.isoformat() if student.updated_at else None
+        }
+
+        return jsonify({
+            'success': True,
+            'data': student_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'獲取學生資訊失敗: {str(e)}'
+        }), 500
 
 @student_bp.route('/create', methods=['POST'])
 @swag_from({
