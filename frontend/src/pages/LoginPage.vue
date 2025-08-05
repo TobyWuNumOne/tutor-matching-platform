@@ -1,83 +1,54 @@
 <script setup>
-import { ref } from "vue";
-import { RouterLink, useRouter } from "vue-router";
-import { onMounted } from "vue";
-import { authAPI } from "../utils/api.js";
+    import { ref } from 'vue';
+    import { RouterLink, useRouter } from 'vue-router';
+    import { onMounted } from 'vue';
+    import { authAPI } from '../utils/api.js';
 
-// 控制密碼顯示/隱藏
-const showPassword = ref(false);
-const password = ref("");
-const account = ref("");
-const router = useRouter();
-const loading = ref(false);
-const errorMsg = ref("");
+    // 控制密碼顯示/隱藏
+    const showPassword = ref(false);
+    const password = ref('');
+    const account = ref('');
+    const router = useRouter();
+    const loading = ref(false);
+    const errorMsg = ref('');
 
-// 登入
-async function login() {
-    errorMsg.value = "";
-    loading.value = true;
-    try {
-        const res = await fetch("http://127.0.0.1:5000/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+    // 登入
+    async function login() {
+        errorMsg.value = '';
+        loading.value = true;
+        try {
+            const response = await authAPI.login({
                 account: account.value,
                 password: password.value,
-            }),
-        });
-        let data = {};
-        try {
-            data = await res.json();
-        } catch (jsonErr) {
-            // 非 JSON 回應
-            errorMsg.value = "伺服器回應格式錯誤，請稍後再試";
-            return;
-        }
-        if (res.ok && data.access_token) {
-            localStorage.setItem("jwt", data.access_token);
-            // 額外存一份用戶資訊
-            if (data.user) {
-                localStorage.setItem("user_info", JSON.stringify(data.user));
+            });
+
+            const data = response.data;
+            if (data.access_token) {
+                localStorage.setItem('jwt', data.access_token);
+                // 額外存一份用戶資訊
+                if (data.user) {
+                    localStorage.setItem(
+                        'user_info',
+                        JSON.stringify(data.user)
+                    );
+                }
+                router.push('/personaldashboard'); // 登入成功後導向個人頁面
+            } else {
+                errorMsg.value = '登入失敗，請檢查帳號密碼';
             }
-            router.push("/personaldashboard"); // 登入成功後導向個人頁面
-        } else {
-            errorMsg.value = data.error || "登入失敗，請檢查帳號密碼";
+        } catch (error) {
+            console.error('登入錯誤:', error);
+            if (error.response?.data?.error) {
+                errorMsg.value = error.response.data.error;
+            } else if (error.response?.status === 401) {
+                errorMsg.value = '帳號或密碼錯誤';
+            } else {
+                errorMsg.value = '無法連線伺服器，請稍後再試';
+            }
+        } finally {
+            loading.value = false;
         }
-    } catch (e) {
-        errorMsg.value = "無法連線伺服器，請稍後再試";
-    } finally {
-        loading.value = false;
     }
-}
-
-// Google 登入回調
-function handleCredentialResponse(response) {
-    const id_token = response.credential;
-
-    fetch("https://你的API/api/auth/google/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_token }),
-    })
-        .then((res) => res.json())
-        .then((data) => {
-            localStorage.setItem("jwt", data.token);
-        });
-}
-
-onMounted(() => {
-    // 初始化 SDK
-    window.google.accounts.id.initialize({
-        client_id: "你的GoogleClientID",
-        callback: handleCredentialResponse,
-    });
-
-    // 動態生成 Google 登入按鈕
-    window.google.accounts.id.renderButton(
-        document.getElementById("google-login-btn"),
-        { theme: "outline", size: "large" }
-    );
-});
 </script>
 
 <template>
@@ -166,13 +137,7 @@ onMounted(() => {
                     <!-- 分隔線 + 或 -->
                     <div
                         class="flex items-center justify-center gap-2 text-gray-500 text-sm"
-                    >
-                        <hr class="flex-1 border-gray-300" />
-                        <span>或</span>
-                        <hr class="flex-1 border-gray-300" />
-                    </div>
-
-                    <div id="google-login-btn"></div>
+                    ></div>
                 </div>
 
                 <!-- 註冊導引 -->
