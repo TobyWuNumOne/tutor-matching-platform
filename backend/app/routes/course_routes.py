@@ -330,7 +330,8 @@ def get_course_list():
         courses = pagination.items
 
         # 使用 schema 序列化資料
-        courses_data = course_response_schema_many.dump(courses)
+        course_response_schema = CourseResponseSchema(many=True)
+        courses_data = course_response_schema.dump(courses)
 
         return (
             jsonify(

@@ -11,6 +11,7 @@ import Booking from "../pages/Booking.vue";
 import RegisterTeacher from "../pages/RegisterTeacher.vue";
 import CourseForm from "../pages/CourseForm.vue";
 import ReviewForm from "../pages/ReviewForm.vue";
+import ApiTest from "../components/ApiTest.vue";
 
 const routes = [
     {
@@ -60,6 +61,10 @@ const routes = [
     {
         path: "/reviewform",
         component: ReviewForm,
+    },
+    {
+        path: "/api-test",
+        component: ApiTest,
     },
 ];
 

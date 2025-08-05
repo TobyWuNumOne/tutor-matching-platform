@@ -3,7 +3,7 @@
     import { useRouter } from 'vue-router';
     import Navbar from '../components/Navbar.vue';
     import Footer from '../components/Footer.vue';
-    import axios from 'axios';
+    import { courseAPI } from '../utils/api.js';
 
     // 資料
     const CourseCategories = ['國文', '英文', '數學', '社會', '自然', '日文'];
@@ -29,11 +29,12 @@
         loading.value = true;
         error.value = '';
         try {
-            const response = await axios.get('/api/course/courseinfo');
+            const response = await courseAPI.getAllCourses();
 
             if (response.data.success) {
                 //如果response有成功拉到資料(response.data.success = true)
                 courses.value = response.data.data;
+                console.log('✅ 課程資料載入成功:', courses.value);
             } else {
                 error.value = response.data.error
                     ? response.data.error
@@ -48,17 +49,10 @@
         }
     }
 
-    //篩選課程資料
+    // 暫時移除篩選功能，直接顯示所有課程
     const filteredCourses = computed(() => {
-        return courses.value.filter((course) => {
-            const categoryMatch = selectedCategory.value
-                ? course.subject === selectedCategory.value
-                : true; //沒選擇的科目的話，每次回圈的categoryMatch都是true(不會被過濾掉)
-            const ratingMatch = selectedRating.value
-                ? course.avg_rating >= selectedRating.value
-                : true; //沒選擇的分數的話，每次回圈的ratingMatch都是true(不會被過濾掉)
-            return categoryMatch && ratingMatch;
-        });
+        console.log('📋 當前課程資料:', courses.value);
+        return courses.value; // 直接返回所有課程，不做篩選
     });
     // 控制哪個 modal 被打開
     const activeModalIndex = ref(null);
@@ -79,6 +73,7 @@
     };
 
     onMounted(() => {
+        console.log('🚀 Search頁面載入，開始獲取課程資料...');
         fetchCourses();
     });
 </script>
@@ -120,6 +115,18 @@
         <section
             class="flex-1 p-6 bg-gray-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
         >
+            <!-- 除錯資訊 -->
+            <div v-if="loading" class="col-span-full text-center py-8">
+                <p class="text-lg">載入中...</p>
+            </div>
+            <div v-else-if="error" class="col-span-full text-center text-red-500 py-8">
+                <p class="text-lg">錯誤: {{ error }}</p>
+            </div>
+            <div v-else-if="courses.length === 0" class="col-span-full text-center py-8">
+                <p class="text-lg">沒有找到課程資料</p>
+            </div>
+            
+            <!-- 課程卡片 -->
             <div
                 v-for="(course, index) in filteredCourses"
                 :key="course.id"
