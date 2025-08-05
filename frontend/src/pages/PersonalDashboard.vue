@@ -1,73 +1,245 @@
 <script setup>
-import { reactive, ref } from "vue";
+import { reactive, ref, onMounted } from "vue";
 import Navbar from "../components/Navbar.vue";
 import Footer from "../components/Footer.vue";
+import { authAPI, userAPI, studentAPI, bookingAPI } from "../utils/api.js";
 
 // 個人資料
 const students = reactive({
-    name: "Cody",
-    email: "cody@test.com",
-    country: "臺北 Taipei",
-    specialization: "國文",
-
-    gender: "男",
-    age: "18",
+    name: "",
+    email: "",
+    country: "",
+    specialization: "",
+    gender: "",
+    age: "",
+    role: "",
+    id: null,
 });
+
+// 載入狀態
+const loading = ref(false);
+const error = ref("");
 
 const isEditing = ref(false); // 是否進入編輯模式
 
 const studentForm = reactive({
-    email: students.email,
-    gender: students.gender,
-    age: students.age,
+    email: "",
+    gender: "",
+    age: "",
 });
 
-// 模擬送出表單的函式（實際請串接 API）
-const submitProfileEdit = () => {
-    // 你可以用 fetch / axios 呼叫 API 更新後端資料庫
-    console.log("送出資料：", studentForm);
-
-    // 假設送出成功，就更新畫面顯示用資料
-    students.email = studentForm.email;
-    students.gender = studentForm.gender;
-    students.age = studentForm.age;
-
-    isEditing.value = false;
+// 獲取用戶資料
+const fetchUserProfile = async () => {
+    loading.value = true;
+    error.value = "";
+    
+    try {
+        const response = await authAPI.getCurrentUser();
+        const userData = response.data;
+        
+        console.log("✅ 用戶資料載入成功:", userData);
+        
+        // 更新用戶基本資料
+        students.id = userData.id;
+        students.name = userData.name;
+        students.email = userData.account; // API返回的是account字段
+        students.role = userData.role;
+        
+        // 根據角色獲取詳細資料
+        if (userData.role === 'student') {
+            await fetchStudentDetails(userData.id);
+        } else if (userData.role === 'teacher') {
+            await fetchTeacherDetails(userData.id);
+        }
+        
+        // 更新表單資料 (在獲取詳細資料後)
+        setTimeout(() => {
+            studentForm.email = students.email;
+            studentForm.gender = students.gender;
+            studentForm.age = students.age;
+        }, 200);
+        
+    } catch (err) {
+        console.error("獲取用戶資料失敗:", err);
+        error.value = "無法載入用戶資料，請重新登入";
+    } finally {
+        loading.value = false;
+    }
 };
 
-// 假資料老師
-const bookedTeachers = ref([
-    {
-        name: "老師 A",
-        course: "國文",
-        time: "09:00 - 10:00",
-        status: "可預約",
-    },
-    {
-        name: "老師 B",
-        course: "英文",
-        time: "10:00 - 11:00",
-        status: "不可預約",
-    },
-    {
-        name: "老師 C",
-        course: "數學",
-        time: "14:00 - 15:00",
-        status: "可預約",
-    },
-    {
-        name: "老師 D",
-        course: "社會",
-        time: "17:00 - 18:00",
-        status: "不可預約",
-    },
-    {
-        name: "老師 E",
-        course: "自然",
-        time: "20:00 - 21:00",
-        status: "可預約",
-    },
-]);
+// 獲取學生詳細資料
+const fetchStudentDetails = async (userId) => {
+    try {
+        console.log("🔍 獲取學生詳細資料...", userId);
+        const response = await studentAPI.getStudentByUserId(userId);
+        
+        if (response.data.success) {
+            const studentData = response.data.data;
+            console.log("✅ 學生詳細資料:", studentData);
+            
+            // 更新學生資料
+            students.email = studentData.email || students.email;
+            students.gender = studentData.gender || "尚未設定";
+            students.age = studentData.age || "尚未設定";
+            students.country = "臺北 Taipei";
+            students.specialization = "學生";
+        } else {
+            console.log("⚠️ 沒有找到學生資料，使用預設值");
+            students.country = "臺北 Taipei";
+            students.specialization = "學生";
+            students.gender = "尚未設定";
+            students.age = "尚未設定";
+        }
+    } catch (err) {
+        console.error("獲取學生詳細資料失敗:", err);
+        // 使用預設值
+        students.country = "臺北 Taipei";
+        students.specialization = "學生";
+        students.gender = "尚未設定";
+        students.age = "尚未設定";
+    }
+};
+
+// 獲取老師詳細資料
+const fetchTeacherDetails = async (userId) => {
+    try {
+        // 這裡可以調用老師詳細資料API
+        // const response = await teacherAPI.getTeacherInfo();
+        // 暫時使用預設值
+        students.country = "臺北 Taipei";
+        students.specialization = "專業教師";
+        students.gender = "尚未設定";
+        students.age = "尚未設定";
+    } catch (err) {
+        console.error("獲取老師詳細資料失敗:", err);
+    }
+};
+
+// 更新個人資料
+const submitProfileEdit = async () => {
+    try {
+        console.log("📝 更新學生資料：", studentForm);
+        
+        // 調用學生資料更新API
+        const updateData = {
+            email: studentForm.email,
+            gender: studentForm.gender,
+            age: studentForm.age
+        };
+        
+        const response = await studentAPI.updateStudentInfo(updateData);
+        console.log("✅ 學生資料更新成功:", response.data);
+        
+        // 更新本地顯示資料
+        students.email = studentForm.email;
+        students.gender = studentForm.gender;
+        students.age = studentForm.age;
+        
+        isEditing.value = false;
+        
+    } catch (err) {
+        console.error("更新學生資料失敗:", err);
+        error.value = "更新失敗，請稍後再試";
+    }
+};
+
+// 獲取用戶預約資料 (暫時使用假資料)
+const fetchUserBookings = async () => {
+    bookingsLoading.value = true;
+    bookingsError.value = '';
+    
+    try {
+        console.log("🔍 獲取用戶預約資料 (暫時使用假資料)...");
+        
+        // 暫時使用假資料，避免API錯誤影響頁面
+        const fakeBookings = [
+            {
+                id: 1,
+                teacher_name: "張老師",
+                course_name: "數學",
+                schedule_date: "2025-01-10 10:00:00",
+                status: "confirmed"
+            },
+            {
+                id: 2,
+                teacher_name: "李老師", 
+                course_name: "英文",
+                schedule_date: "2025-01-12 14:00:00",
+                status: "pending"
+            }
+        ];
+        
+        // 轉換預約資料為顯示格式
+        bookedTeachers.value = fakeBookings.map(booking => ({
+            id: booking.id,
+            name: booking.teacher_name,
+            course: booking.course_name,
+            time: formatBookingTime(booking.schedule_date),
+            status: getBookingStatus(booking.status),
+            originalStatus: booking.status,
+            scheduleDate: booking.schedule_date
+        }));
+        
+        console.log("✅ 假資料預約資料:", bookedTeachers.value);
+        
+    } catch (err) {
+        console.error("獲取預約資料失敗:", err);
+        bookingsError.value = "載入預約資料時發生錯誤";
+        bookedTeachers.value = [];
+    } finally {
+        bookingsLoading.value = false;
+    }
+};
+
+// 格式化預約時間顯示
+const formatBookingTime = (scheduleDate) => {
+    if (!scheduleDate) return "時間未定";
+    
+    try {
+        const date = new Date(scheduleDate);
+        const timeStr = date.toLocaleTimeString('zh-TW', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        });
+        const dateStr = date.toLocaleDateString('zh-TW', {
+            month: 'numeric',
+            day: 'numeric'
+        });
+        return `${dateStr} ${timeStr}`;
+    } catch (err) {
+        return scheduleDate;
+    }
+};
+
+// 轉換預約狀態為顯示文字
+const getBookingStatus = (status) => {
+    const statusMap = {
+        'pending': '待確認',
+        'confirmed': '已確認',
+        'completed': '已完成',
+        'cancelled': '已取消'
+    };
+    return statusMap[status] || status;
+};
+
+// 頁面載入時獲取用戶資料
+onMounted(async () => {
+    console.log("🚀 PersonalDashboard載入，開始獲取用戶資料...");
+    
+    // 先獲取用戶資料，再獲取預約資料
+    await fetchUserProfile();
+    
+    // 獨立獲取預約資料，不影響用戶資料顯示
+    fetchUserBookings().catch(err => {
+        console.error("預約資料載入失敗，但不影響其他功能:", err);
+    });
+});
+
+// 真實預約資料
+const bookedTeachers = ref([]);
+const bookingsLoading = ref(false);
+const bookingsError = ref('');
 
 const showAllTeachers = ref(false);
 </script>
@@ -118,6 +290,40 @@ const showAllTeachers = ref(false);
                             class="flex justify-between items-center border-b pb-2"
                         >
                             <p class="font-semibold text-xl">選課狀態：</p>
+                            <button 
+                                @click="fetchUserBookings" 
+                                :disabled="bookingsLoading"
+                                class="text-sm px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                            >
+                                {{ bookingsLoading ? '載入中...' : '重新整理' }}
+                            </button>
+                        </div>
+
+                        <!-- 載入狀態 -->
+                        <div v-if="bookingsLoading && bookedTeachers.length === 0" class="text-center py-4">
+                            <p class="text-gray-600">載入預約資料中...</p>
+                        </div>
+
+                        <!-- 錯誤狀態 -->
+                        <div v-else-if="bookingsError" class="text-center py-4">
+                            <p class="text-red-500">{{ bookingsError }}</p>
+                            <button 
+                                @click="fetchUserBookings" 
+                                class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
+                                重新載入
+                            </button>
+                        </div>
+
+                        <!-- 無預約資料 -->
+                        <div v-else-if="bookedTeachers.length === 0" class="text-center py-8">
+                            <p class="text-gray-500 mb-4">目前沒有預約課程</p>
+                            <router-link 
+                                to="/search" 
+                                class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                            >
+                                立即預約課程
+                            </router-link>
                         </div>
 
                         <div

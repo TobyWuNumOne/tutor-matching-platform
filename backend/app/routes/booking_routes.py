@@ -317,7 +317,8 @@ def get_booking_list():
         bookings = pagination.items
         
         # 使用 schema 序列化資料
-        bookings_data = booking_response_schema_many.dump(bookings)
+        booking_response_schema = BookingResponseSchema(many=True)
+        bookings_data = booking_response_schema.dump(bookings)
         
         return jsonify({
             'success': True,
@@ -402,7 +403,8 @@ def get_booking_detail(booking_id):
                 'message': '找不到指定的預約'
             }), 404
         
-        # 使用 schema 序列化資料
+        # 使用 schema 序列化回應
+        booking_response_schema = BookingResponseSchema()
         booking_data = booking_response_schema.dump(booking)
         
         return jsonify({
@@ -567,6 +569,7 @@ def update_booking(current_user, booking_id):
         ).get(booking_id)
         
         # 使用 schema 序列化回應
+        booking_response_schema = BookingResponseSchema()
         response_data = booking_response_schema.dump(updated_booking)
         
         return jsonify({
