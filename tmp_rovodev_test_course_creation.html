@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課程創建測試</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input, select, textarea { padding: 8px; margin: 5px; width: 200px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🎓 課程創建測試頁面</h1>
+    
+    <div class="test-section">
+        <h2>1. 先登入獲取Token</h2>
+        <input type="email" id="login-email" placeholder="Email" value="test@example.com">
+        <input type="password" id="login-password" placeholder="密碼" value="test123">
+        <button onclick="login()">登入</button>
+        <div id="login-result"></div>
+        <p>Token狀態: <span id="token-status">❌ 未設置</span></p>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 創建課程</h2>
+        <input type="text" id="course-subject" placeholder="課程科目" value="數學">
+        <textarea id="course-description" placeholder="課程描述">高中數學課程</textarea><br>
+        <input type="number" id="course-price" placeholder="價格" value="500">
+        <input type="text" id="course-location" placeholder="地點" value="台北">
+        <button onclick="createCourse()" id="create-btn" disabled>創建課程</button>
+        <div id="course-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 測試結果</h2>
+        <div id="final-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:5000/api';
+        let authToken = null;
+
+        // 顯示結果
+        function showResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            const isSuccess = result.success;
+            element.className = `test-section ${isSuccess ? 'success' : 'error'}`;
+            element.innerHTML = `
+                <h4>${isSuccess ? '✅ 成功' : '❌ 失敗'}</h4>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+        }
+
+        // 登入
+        async function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account: email, password: password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    authToken = data.access_token;
+                    document.getElementById('token-status').innerHTML = '✅ 已設置';
+                    document.getElementById('create-btn').disabled = false;
+                    showResult('login-result', {
+                        success: true,
+                        message: '登入成功',
+                        token: authToken.substring(0, 20) + '...'
+                    });
+                } else {
+                    showResult('login-result', {
+                        success: false,
+                        message: '登入失敗',
+                        error: data
+                    });
+                }
+            } catch (error) {
+                showResult('login-result', {
+                    success: false,
+                    message: '網路錯誤',
+                    error: error.message
+                });
+            }
+        }
+
+        // 創建課程
+        async function createCourse() {
+            if (!authToken) {
+                alert('請先登入！');
+                return;
+            }
+
+            const courseData = {
+                subject: document.getElementById('course-subject').value,
+                description: document.getElementById('course-description').value,
+                price: parseFloat(document.getElementById('course-price').value),
+                location: document.getElementById('course-location').value,
+                teacher_id: 1 // 暫時使用固定值
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/course/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(courseData)
+                });
+
+                const data = await response.json();
+                
+                showResult('course-result', {
+                    success: response.ok,
+                    message: response.ok ? '課程創建成功' : '課程創建失敗',
+                    data: data,
+                    status: response.status
+                });
+
+                if (response.ok) {
+                    document.getElementById('final-result').innerHTML = `
+                        <div class="success">
+                            <h3>🎉 課程創建成功！</h3>
+                            <p>課程ID: ${data.course?.id || '未知'}</p>
+                            <p>現在可以回到前端頁面測試了！</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                showResult('course-result', {
+                    success: false,
+                    message: '網路錯誤',
+                    error: error.message
+                });
+            }
+        }
+
+        // 頁面載入時檢查token
+        window.onload = function() {
+            const savedToken = localStorage.getItem('jwt');
+            if (savedToken) {
+                authToken = savedToken;
+                document.getElementById('token-status').innerHTML = '✅ 已設置 (來自localStorage)';
+                document.getElementById('create-btn').disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

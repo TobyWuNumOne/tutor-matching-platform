@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前後端串接測試</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔗 前後端串接測試頁面</h1>
+    
+    <div class="test-section">
+        <h2>1. 後端連線測試</h2>
+        <button onclick="testBackendConnection()">測試後端連線</button>
+        <div id="connection-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 用戶註冊測試</h2>
+        <input type="text" id="register-name" placeholder="姓名" value="測試用戶">
+        <input type="email" id="register-email" placeholder="Email" value="test@example.com">
+        <input type="password" id="register-password" placeholder="密碼" value="test123">
+        <select id="register-gender">
+            <option value="male">男</option>
+            <option value="female">女</option>
+        </select>
+        <input type="number" id="register-age" placeholder="年齡" value="25">
+        <button onclick="testRegister()">測試註冊</button>
+        <div id="register-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 用戶登入測試</h2>
+        <input type="email" id="login-email" placeholder="Email" value="test@example.com">
+        <input type="password" id="login-password" placeholder="密碼" value="test123">
+        <button onclick="testLogin()">測試登入</button>
+        <div id="login-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. 課程資料測試</h2>
+        <button onclick="testGetCourses()">獲取課程列表</button>
+        <div id="courses-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. 認證測試</h2>
+        <button onclick="testAuthenticatedRequest()">測試需要認證的請求</button>
+        <div id="auth-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:5000/api';
+        let authToken = null;
+
+        // 通用請求函數
+        async function makeRequest(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                }
+            };
+            
+            const finalOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: { ...defaultOptions.headers, ...options.headers }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}${url}`, finalOptions);
+                const data = await response.json();
+                return { success: response.ok, data, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        // 顯示結果
+        function showResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            const isSuccess = result.success;
+            element.className = `test-section ${isSuccess ? 'success' : 'error'}`;
+            element.innerHTML = `
+                <h4>${isSuccess ? '✅ 成功' : '❌ 失敗'}</h4>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+        }
+
+        // 1. 測試後端連線
+        async function testBackendConnection() {
+            const result = await makeRequest('/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ account: 'test', password: 'test' })
+            });
+            showResult('connection-result', {
+                success: result.status !== undefined,
+                message: result.status !== undefined ? '後端服務正常運行' : '無法連接後端',
+                details: result
+            });
+        }
+
+        // 2. 測試註冊
+        async function testRegister() {
+            const userData = {
+                name: document.getElementById('register-name').value,
+                account: document.getElementById('register-email').value,
+                password: document.getElementById('register-password').value,
+                gender: document.getElementById('register-gender').value,
+                age: parseInt(document.getElementById('register-age').value),
+                role: 'student'
+            };
+
+            const result = await makeRequest('/auth/register', {
+                method: 'POST',
+                body: JSON.stringify(userData)
+            });
+            showResult('register-result', result);
+        }
+
+        // 3. 測試登入
+        async function testLogin() {
+            const loginData = {
+                account: document.getElementById('login-email').value,
+                password: document.getElementById('login-password').value
+            };
+
+            const result = await makeRequest('/auth/login', {
+                method: 'POST',
+                body: JSON.stringify(loginData)
+            });
+
+            if (result.success && result.data.access_token) {
+                authToken = result.data.access_token;
+                result.message = '登入成功，Token已保存';
+            }
+            showResult('login-result', result);
+        }
+
+        // 4. 測試獲取課程
+        async function testGetCourses() {
+            const result = await makeRequest('/course/courseinfo');
+            showResult('courses-result', result);
+        }
+
+        // 5. 測試認證請求
+        async function testAuthenticatedRequest() {
+            if (!authToken) {
+                showResult('auth-result', {
+                    success: false,
+                    message: '請先登入獲取Token'
+                });
+                return;
+            }
+
+            const result = await makeRequest('/users/profile');
+            showResult('auth-result', result);
+        }
+
+        // 頁面載入時自動測試連線
+        window.onload = function() {
+            testBackendConnection();
+        };
+    </script>
+</body>
+</html>
