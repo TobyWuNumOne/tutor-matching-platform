@@ -1,83 +1,114 @@
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+    import { ref } from 'vue';
+    import { useRouter } from 'vue-router';
 
-const form = ref({
-    name: "",
-    email: "",
-    phone: "",
-    gender: "",
-    age: "",
-    education: "",
-    certifications: "",
-    avatar: "",
-    intro: "",
-    teaching_experience: "",
-    status: "pending", // 預設為審核中
-    blue_premium: false,
-    user_id: null, // 送出前自動帶入
-});
+    const form = ref({
+        name: '',
+        email: '',
+        phone: '',
+        gender: '',
+        age: '',
+        education: '',
+        certifications: '',
+        avatar: '',
+        intro: '',
+        teaching_experience: '',
+        status: 'pending', // 預設為審核中
+        blue_premium: false,
+        user_id: null, // 送出前自動帶入
+    });
 
-const submitted = ref(false);
-const loading = ref(false);
-const errorMsg = ref("");
-const router = useRouter();
+    const submitted = ref(false);
+    const loading = ref(false);
+    const errorMsg = ref('');
+    const router = useRouter();
 
-async function submitForm() {
-    loading.value = true;
-    errorMsg.value = "";
-    // 嘗試從 localStorage 取得 user_id
-    try {
-        const jwt = localStorage.getItem("jwt");
-        if (jwt) {
-            const payload = JSON.parse(atob(jwt.split(".")[1]));
-            console.log("[JWT payload]", payload);
-            form.value.user_id = Number(payload.sub);
-            console.log("[送出 user_id]", form.value.user_id);
-            if (!form.value.user_id) {
-                errorMsg.value =
-                    "JWT 內找不到 user_id (sub)，請確認登入流程或後端 JWT payload 格式";
+    async function submitForm() {
+        loading.value = true;
+        errorMsg.value = '';
+        // 嘗試從 localStorage 取得 user_id
+        try {
+            const jwt = localStorage.getItem('jwt');
+            if (jwt) {
+                const payload = JSON.parse(atob(jwt.split('.')[1]));
+                console.log('[JWT payload]', payload);
+                form.value.user_id = Number(payload.sub);
+                console.log('[送出 user_id]', form.value.user_id);
+                if (!form.value.user_id) {
+                    errorMsg.value =
+                        'JWT 內找不到 user_id (sub)，請確認登入流程或後端 JWT payload 格式';
+                    loading.value = false;
+                    return;
+                }
+            } else {
+                errorMsg.value = '請先登入再申請老師註冊';
                 loading.value = false;
                 return;
             }
-        } else {
-            errorMsg.value = "請先登入再申請老師註冊";
-            loading.value = false;
-            return;
-        }
-        form.value.age = String(form.value.age);
-        const res = await fetch("http://127.0.0.1:5000/api/teacher/create", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form.value),
-        });
-        if (res.ok) {
-            submitted.value = true;
-            setTimeout(() => router.push("/search"), 1200);
-        } else {
-            const data = await res.json();
-            console.log("[老師註冊API回應]", data);
-            // 根據後端 message 判斷是否已是老師
-            if (
-                (data.message &&
-                    (data.message.includes("已有老師身分") ||
-                        data.message.includes("已經是老師"))) ||
-                (data.error &&
-                    (data.error.includes("已有老師身分") ||
-                        data.error.includes("已經是老師")))
-            ) {
-                errorMsg.value = "您已經是老師，無法重複申請。";
+            form.value.age = String(form.value.age);
+
+            // 確保不包含 password 欄位的乾淨數據
+            const teacherData = {
+                name: form.value.name,
+                email: form.value.email,
+                phone: form.value.phone,
+                gender: form.value.gender,
+                age: form.value.age,
+                education: form.value.education,
+                certifications: form.value.certifications,
+                avatar: form.value.avatar,
+                intro: form.value.intro,
+                teaching_experience: form.value.teaching_experience,
+                status: form.value.status,
+                blue_premium: form.value.blue_premium,
+                user_id: form.value.user_id,
+            };
+
+            console.log('[送出的教師資料]', teacherData);
+
+            const res = await fetch(
+                'http://127.0.0.1:5000/api/teacher/create',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(teacherData),
+                }
+            );
+            if (res.ok) {
+                submitted.value = true;
+                setTimeout(() => router.push('/search'), 1200);
             } else {
-                errorMsg.value =
-                    data.error || data.message || "申請失敗，請稍後再試";
+                const data = await res.json();
+                console.log('[老師註冊API回應]', data);
+                console.log('[錯誤詳情]', data.error || data.message);
+                // 根據後端 message 判斷是否已是老師
+                if (
+                    (data.message &&
+                        (data.message.includes('已有老師身分') ||
+                            data.message.includes('已經是老師'))) ||
+                    (data.error &&
+                        (data.error.includes('已有老師身分') ||
+                            data.error.includes('已經是老師')))
+                ) {
+                    const errorMessage = '您已經是老師，無法重複申請。';
+                    alert(errorMessage);
+                    router.push('/');
+                } else {
+                    const errorMessage =
+                        data.error || data.message || '申請失敗，請稍後再試';
+                    alert(errorMessage);
+                    router.push('/');
+                }
             }
+        } catch (e) {
+            console.error('[提交錯誤]', e);
+            const errorMessage = '伺服器錯誤，請稍後再試: ' + e.message;
+            alert(errorMessage);
+            router.push('/');
+        } finally {
+            loading.value = false;
         }
-    } catch (e) {
-        errorMsg.value = "伺服器錯誤，請稍後再試";
-    } finally {
-        loading.value = false;
     }
-}
 </script>
 
 <template>
@@ -215,17 +246,17 @@ async function submitForm() {
 </template>
 
 <style scoped>
-.input {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 0.375rem;
-    transition: border 0.2s;
-}
+    .input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #ccc;
+        border-radius: 0.375rem;
+        transition: border 0.2s;
+    }
 
-.input:focus {
-    outline: none;
-    border-color: #3f3ff0;
-    box-shadow: 0 0 0 1px #3f3ff0;
-}
+    .input:focus {
+        outline: none;
+        border-color: #3f3ff0;
+        box-shadow: 0 0 0 1px #3f3ff0;
+    }
 </style>

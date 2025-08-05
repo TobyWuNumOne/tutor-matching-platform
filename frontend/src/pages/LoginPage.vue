@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { onMounted } from "vue";
+import { authAPI } from "../utils/api.js";
 
 // 控制密碼顯示/隱藏
 const showPassword = ref(false);
