@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API端點測試</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .endpoint { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        button { padding: 5px 10px; margin: 5px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 API端點測試</h1>
+    
+    <div class="endpoint">
+        <h3>1. 課程相關端點</h3>
+        <button onclick="testEndpoint('/course/list', 'GET')">GET /course/list</button>
+        <button onclick="testEndpoint('/course/create', 'POST', {subject:'測試',teacher_id:1,price:500,location:'台北'})">POST /course/create</button>
+        <div id="course-result"></div>
+    </div>
+
+    <div class="endpoint">
+        <h3>2. 用戶相關端點</h3>
+        <button onclick="testEndpoint('/users', 'GET')">GET /users (需管理員)</button>
+        <button onclick="testEndpoint('/auth/me', 'GET')">GET /auth/me (當前用戶)</button>
+        <div id="user-result"></div>
+    </div>
+
+    <div class="endpoint">
+        <h3>3. 認證相關端點</h3>
+        <button onclick="testEndpoint('/auth/login', 'POST', {account:'test@example.com',password:'test123'})">POST /auth/login</button>
+        <button onclick="testEndpoint('/auth/register', 'POST', {name:'測試',account:'test2@example.com',password:'test123',role:'student',gender:'male',age:25})">POST /auth/register</button>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="endpoint">
+        <h3>4. 測試結果</h3>
+        <div id="all-results"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:5000/api';
+        let authToken = localStorage.getItem('jwt');
+
+        async function testEndpoint(endpoint, method, data = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                }
+            };
+
+            if (data && (method === 'POST' || method === 'PUT')) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                let responseData;
+                
+                try {
+                    responseData = await response.json();
+                } catch (e) {
+                    responseData = await response.text();
+                }
+
+                const result = {
+                    endpoint: `${method} ${endpoint}`,
+                    status: response.status,
+                    success: response.ok,
+                    data: responseData
+                };
+
+                // 如果是登入成功，保存token
+                if (endpoint === '/auth/login' && response.ok && responseData.access_token) {
+                    authToken = responseData.access_token;
+                    localStorage.setItem('jwt', authToken);
+                    result.message = 'Token已保存';
+                }
+
+                displayResult(result);
+                return result;
+
+            } catch (error) {
+                const result = {
+                    endpoint: `${method} ${endpoint}`,
+                    success: false,
+                    error: error.message
+                };
+                displayResult(result);
+                return result;
+            }
+        }
+
+        function displayResult(result) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = result.success ? 'success' : 'error';
+            resultDiv.innerHTML = `
+                <h4>${result.success ? '✅' : '❌'} ${result.endpoint}</h4>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+            
+            document.getElementById('all-results').appendChild(resultDiv);
+        }
+
+        // 頁面載入時顯示當前token狀態
+        window.onload = function() {
+            if (authToken) {
+                console.log('已有Token:', authToken.substring(0, 20) + '...');
+            } else {
+                console.log('無Token，請先登入');
+            }
+        };
+    </script>
+</body>
+</html>

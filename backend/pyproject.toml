@@ -11,5 +11,8 @@ dependencies = [
     "flask-jwt-extended>=4.7.1",
     "flask-migrate>=4.1.0",
     "flask-sqlalchemy>=3.1.1",
+    "marshmallow>=4.0.0",
+    "marshmallow-sqlalchemy>=1.4.2",
+    "python-dotenv>=1.1.1",
     "requests>=2.32.4",
 ]

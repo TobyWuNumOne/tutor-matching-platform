@@ -1,7 +1,7 @@
 <script setup>
     import { ref } from 'vue';
     import { useRouter } from 'vue-router';
-    import axios from 'axios';
+    import { courseAPI } from '../utils/api.js';
     import Navbar from '../components/Navbar.vue';
     import Footer from '../components/Footer.vue';
 
@@ -46,7 +46,7 @@
 
     // 從 localStorage 獲取當前教師的 ID
     const getCurrentTeacherId = () => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('jwt'); // 修正token key
         if (token) {
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
@@ -102,19 +102,7 @@
         successMessage.value = '';
 
         try {
-            // 從 localStorage 獲取 token
-            const token = localStorage.getItem('token');
-
-            const response = await axios.post(
-                `${API_BASE_URL}/course/create`,
-                courseData,
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: token ? `Bearer ${token}` : '', // 如果有 token 則加上
-                    },
-                }
-            );
+            const response = await courseAPI.createCourse(courseData);
 
             console.log('✅ 課程建立成功:', response.data);
 

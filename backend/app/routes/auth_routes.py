@@ -276,6 +276,39 @@ def logout_all():
         return jsonify({"error": str(e)}), 500
 
 
+@auth_bp.route("/me", methods=["GET"])
+@swag_from(
+    {
+        "tags": ["認證"],
+        "summary": "獲取當前用戶資訊",
+        "responses": {
+            200: {"description": "當前用戶資訊"},
+            401: {"description": "未授權"},
+        },
+    }
+)
+@jwt_required()
+def get_current_user():
+    """獲取當前登入用戶的資訊"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(int(current_user_id))
+        
+        if not user:
+            return jsonify({"error": "用戶不存在"}), 404
+            
+        return jsonify({
+            "id": user.id,
+            "name": user.name,
+            "account": user.account,
+            "role": user.role,
+            "created_at": user.created_at.isoformat() if user.created_at else None
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @auth_bp.route("/token-status", methods=["GET"])
 @swag_from(
     {
