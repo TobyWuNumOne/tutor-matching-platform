@@ -233,8 +233,8 @@ def convert_to_ecpay_params(order_data):
             'ChooseSubPayment': '',
             
             # 🎯 付款完成後的跳轉頁面（帶上訂單編號）
-            'ClientBackURL': f'http://localhost:3000/payment/success?trade_no={merchant_trade_no}',
-            'OrderResultURL': f'http://localhost:3000/payment/result?trade_no={merchant_trade_no}',
+            # 'ClientBackURL': f'http://localhost:3000/payment/success?trade_no={merchant_trade_no}',
+            # 'OrderResultURL': f'http://localhost:3000/payment/result?trade_no={merchant_trade_no}',
             
             'NeedExtraPaidInfo': 'Y',
             'DeviceSource': '',
