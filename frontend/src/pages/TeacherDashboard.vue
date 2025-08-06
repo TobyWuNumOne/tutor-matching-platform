@@ -1,312 +1,349 @@
 <script setup>
-import { reactive, ref, computed } from "vue";
-import Navbar from "../components/Navbar.vue";
-import Footer from "../components/Footer.vue";
+    import { reactive, ref, computed } from 'vue';
+    import Navbar from '../components/Navbar.vue';
+    import Footer from '../components/Footer.vue';
+    import BluePremium from '../components/Blue_Premium.vue';
+    import { useRouter } from 'vue-router';
+    const router = useRouter();
 
-import { useRouter } from "vue-router";
-const router = useRouter();
-
-// 取得登入老師資料
-let userInfo = {};
-try {
-    userInfo = JSON.parse(localStorage.getItem("user_info")) || {};
-} catch (e) {
-    userInfo = {};
-}
-const teachers = reactive({
-    name: userInfo.name || "",
-    email: userInfo.account || "",
-});
-
-// 編輯狀態
-const editingProfile = ref(false);
-
-// 複製老師資料做暫存編輯
-const tempTeacher = reactive({
-    name: teachers.name,
-    email: teachers.email,
-});
-
-// 編輯個人資料按鈕事件
-async function saveProfile() {
-    // 1. 呼叫後端 API 更新 Teacher 與 User
-    const user_id = userInfo.id; // 或 userInfo.user_id
-    const payload = {
-        user_id,
-        name: tempTeacher.name,
-        email: tempTeacher.email,
-        // 其他欄位...
-    };
+    // 取得登入老師資料
+    let userInfo = {};
     try {
-        const res = await fetch("http://127.0.0.1:5000/api/teacher/update", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
-        if (res.ok) {
-            teachers.name = tempTeacher.name;
-            teachers.email = tempTeacher.email;
-            editingProfile.value = false;
-            // 可選：更新 localStorage user_info
-            userInfo.name = tempTeacher.name;
-            userInfo.email = tempTeacher.email;
-            localStorage.setItem("user_info", JSON.stringify(userInfo));
-        } else {
+        userInfo = JSON.parse(localStorage.getItem('user_info')) || {};
+    } catch (e) {
+        userInfo = {};
+    }
+    const teachers = reactive({
+        name: userInfo.name || '',
+        email: userInfo.account || '',
+        blue_premium: userInfo.blue_premium || false,
+    });
+
+    // 編輯狀態
+    const editingProfile = ref(false);
+
+    // 複製老師資料做暫存編輯
+    const tempTeacher = reactive({
+        name: teachers.name,
+        email: teachers.email,
+    });
+
+    // 編輯個人資料按鈕事件
+    async function saveProfile() {
+        // 1. 呼叫後端 API 更新 Teacher 與 User
+        const user_id = userInfo.id; // 或 userInfo.user_id
+        const payload = {
+            avatar: 'https://via.placeholder.com/150', // 老師照片
+            name: '王小明',
+            email: 'teacher@example.com',
+            phone: '0912-345-678',
+            gender: 'Male',
+            age: '35',
+            education: '國立台灣大學 教育系 碩士',
+            certifications: '教師資格證書 / TESOL / Google Educator',
+            intro: '熱愛教學，擅長互動式學習，專注於學生的個別發展。',
+            teaching_experience:
+                '10年以上高中與成人英文教學經驗。\n曾任教於多間補習班及國際學校。',
+            status: '在職',
+            blue_premium: false,
+            user_id: 1,
+        };
+
+        try {
+            const res = await fetch(
+                'http://127.0.0.1:5000/api/teacher/update',
+                {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                }
+            );
+            if (res.ok) {
+                teachers.name = tempTeacher.name;
+                teachers.email = tempTeacher.email;
+                editingProfile.value = false;
+                // 可選：更新 localStorage user_info
+                userInfo.name = tempTeacher.name;
+                userInfo.email = tempTeacher.email;
+                localStorage.setItem('user_info', JSON.stringify(userInfo));
+            } else {
+                // 處理錯誤
+            }
+        } catch (e) {
             // 處理錯誤
         }
-    } catch (e) {
-        // 處理錯誤
     }
-}
 
-// 取消編輯
-function cancelEditProfile() {
-    editingProfile.value = false;
-}
+    // 取消編輯
+    function cancelEditProfile() {
+        editingProfile.value = false;
+    }
 
-const bookedStudents = ref([]);
+    const bookedStudents = ref([]);
 
-// 取得老師課程及所有 Bookings
-async function fetchTeacherCoursesAndBookings() {
-    try {
-        // 依據你的 API 設計，這裡假設用老師 user_id 查詢
-        const user_id = userInfo.id || userInfo.user_id;
-        const res = await fetch(
-            `http://127.0.0.1:5000/api/course/list?teacher_id=${user_id}`
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        // 假設 data.data 是課程陣列，每個課程有 bookings 陣列
-        const students = [];
-        (data.data || []).forEach((course) => {
-            (course.bookings || []).forEach((booking) => {
-                students.push({
-                    name: booking.student_name || booking.student?.name || "", // 根據你的資料結構
-                    course: course.subject || course.name || "",
-                    time: booking.time || booking.timeslot || "",
-                    status: booking.status || "",
+    // 取得老師課程及所有 Bookings
+    async function fetchTeacherCoursesAndBookings() {
+        try {
+            // 依據你的 API 設計，這裡假設用老師 user_id 查詢
+            const user_id = userInfo.id || userInfo.user_id;
+            const res = await fetch(
+                `http://127.0.0.1:5000/api/course/list?teacher_id=${user_id}`
+            );
+            if (!res.ok) return;
+            const data = await res.json();
+            // 假設 data.data 是課程陣列，每個課程有 bookings 陣列
+            const students = [];
+            (data.data || []).forEach((course) => {
+                (course.bookings || []).forEach((booking) => {
+                    students.push({
+                        name:
+                            booking.student_name || booking.student?.name || '', // 根據你的資料結構
+                        course: course.subject || course.name || '',
+                        time: booking.time || booking.timeslot || '',
+                        status: booking.status || '',
+                    });
                 });
             });
-        });
-        bookedStudents.value = students;
-    } catch (e) {
-        // 可選：錯誤處理
-    }
-}
-
-import { onMounted } from "vue";
-onMounted(() => {
-    fetchTeacherCoursesAndBookings();
-});
-
-const showAllStudents = ref(false);
-const showCalendar = ref(false);
-const showBulletin = ref(false);
-const showModal = ref(false);
-const selectedDate = ref("");
-const selectedPeriod = ref("");
-const scheduleStatus = ref("");
-
-// 2025年7月固定示範，可改成動態邏輯
-const currentYear = ref(2025);
-const currentMonth = ref(7); // 7月
-
-// 上午下午晚上狀態資料，格式：{ 'YYYY-MM-DD': { morning: true/false, afternoon: true/false, evening: true/false } }
-const availability = reactive({});
-
-// 公告欄相關
-const newAnnouncement = reactive({
-    title: "",
-    content: "",
-});
-
-const announcements = reactive([]);
-
-// 判斷該日期的星期幾 0(日)~6(六)
-function getDayOfWeek(year, month, day) {
-    return new Date(year, month - 1, day).getDay();
-}
-
-// 該月份天數
-function getDaysInMonth(year, month) {
-    return new Date(year, month, 0).getDate();
-}
-
-// 生成完整月曆格子 (陣列內元素是日期號碼或空字串代表空格)
-const calendarDays = computed(() => {
-    const days = [];
-    const firstDayWeek = getDayOfWeek(currentYear.value, currentMonth.value, 1);
-    const totalDays = getDaysInMonth(currentYear.value, currentMonth.value);
-
-    // 月曆起始空白格(第一天是星期幾，前面空幾格)
-    for (let i = 0; i < firstDayWeek; i++) {
-        days.push("");
-    }
-    // 月份日期
-    for (let d = 1; d <= totalDays; d++) {
-        days.push(d);
+            bookedStudents.value = students;
+        } catch (e) {
+            // 可選：錯誤處理
+        }
     }
 
-    // 補足尾部空白(不一定要，讓每週7天整齊)
-    while (days.length % 7 !== 0) {
-        days.push("");
+    import { onMounted } from 'vue';
+    onMounted(() => {
+        fetchTeacherCoursesAndBookings();
+    });
+
+    const showAllStudents = ref(false);
+    const showCalendar = ref(false);
+    const showBulletin = ref(false);
+    const showModal = ref(false);
+    const selectedDate = ref('');
+    const selectedPeriod = ref('');
+    const scheduleStatus = ref('');
+
+    // 2025年7月固定示範，可改成動態邏輯
+    const currentYear = ref(2025);
+    const currentMonth = ref(7); // 7月
+
+    // 上午下午晚上狀態資料，格式：{ 'YYYY-MM-DD': { morning: true/false, afternoon: true/false, evening: true/false } }
+    const availability = reactive({});
+
+    // 公告欄相關
+    const newAnnouncement = reactive({
+        title: '',
+        content: '',
+    });
+
+    const announcements = reactive([]);
+
+    // 判斷該日期的星期幾 0(日)~6(六)
+    function getDayOfWeek(year, month, day) {
+        return new Date(year, month - 1, day).getDay();
     }
-    return days;
-});
 
-// 周日固定灰色且不可點擊
-function isSunday(day) {
-    if (!day) return false;
-    return getDayOfWeek(currentYear.value, currentMonth.value, day) === 0;
-}
+    // 該月份天數
+    function getDaysInMonth(year, month) {
+        return new Date(year, month, 0).getDate();
+    }
 
-// 該日期是否所有時段都是不可預約(默認為可預約)
-function isAllUnavailable(day) {
-    if (!day) return false;
-    const dateKey = `${currentYear.value}-${String(currentMonth.value).padStart(
-        2,
-        "0"
-    )}-${String(day).padStart(2, "0")}`;
-    const dayStatus = availability[dateKey];
-    if (!dayStatus) return false; // 無設定代表可預約
-    return !dayStatus.morning && !dayStatus.afternoon && !dayStatus.evening;
-}
+    // 生成完整月曆格子 (陣列內元素是日期號碼或空字串代表空格)
+    const calendarDays = computed(() => {
+        const days = [];
+        const firstDayWeek = getDayOfWeek(
+            currentYear.value,
+            currentMonth.value,
+            1
+        );
+        const totalDays = getDaysInMonth(currentYear.value, currentMonth.value);
 
-// 格子底色判斷
-function getDayBgColor(day) {
-    if (!day) return "bg-transparent";
-    if (isSunday(day)) return "bg-gray-300 cursor-not-allowed";
-    if (isAllUnavailable(day)) return "bg-red-300 cursor-pointer";
-    return "bg-green-300 cursor-pointer";
-}
+        // 月曆起始空白格(第一天是星期幾，前面空幾格)
+        for (let i = 0; i < firstDayWeek; i++) {
+            days.push('');
+        }
+        // 月份日期
+        for (let d = 1; d <= totalDays; d++) {
+            days.push(d);
+        }
 
-// 點日期時，設定 selectedDate 且 showModal 打開
-function onClickDate(day) {
-    if (!day) return;
-    if (isSunday(day)) return;
-    selectedDate.value = `${currentYear.value}-${String(
-        currentMonth.value
-    ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    showModal.value = false;
-}
+        // 補足尾部空白(不一定要，讓每週7天整齊)
+        while (days.length % 7 !== 0) {
+            days.push('');
+        }
+        return days;
+    });
 
-// 打開modal設定時段狀態
-function openSchedule(period) {
-    selectedPeriod.value = period;
-    if (!selectedDate.value) return;
-    // 讀取現有狀態或預設true（可預約）
-    const dateKey = selectedDate.value;
-    const dayStatus = availability[dateKey] || {
-        morning: true,
-        afternoon: true,
-        evening: true,
-    };
-    scheduleStatus.value = dayStatus[periodMapToKey(period)];
-    showModal.value = true;
-}
+    // 周日固定灰色且不可點擊
+    function isSunday(day) {
+        if (!day) return false;
+        return getDayOfWeek(currentYear.value, currentMonth.value, day) === 0;
+    }
 
-// 確認狀態(可預約或不可預約)
-function confirmStatus(status) {
-    if (!selectedDate.value) return;
-    const dateKey = selectedDate.value;
-    if (!availability[dateKey]) {
-        availability[dateKey] = {
+    // 該日期是否所有時段都是不可預約(默認為可預約)
+    function isAllUnavailable(day) {
+        if (!day) return false;
+        const dateKey = `${currentYear.value}-${String(
+            currentMonth.value
+        ).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayStatus = availability[dateKey];
+        if (!dayStatus) return false; // 無設定代表可預約
+        return !dayStatus.morning && !dayStatus.afternoon && !dayStatus.evening;
+    }
+
+    // 格子底色判斷
+    function getDayBgColor(day) {
+        if (!day) return 'bg-transparent';
+        if (isSunday(day)) return 'bg-gray-300 cursor-not-allowed';
+        if (isAllUnavailable(day)) return 'bg-red-300 cursor-pointer';
+        return 'bg-green-300 cursor-pointer';
+    }
+
+    // 點日期時，設定 selectedDate 且 showModal 打開
+    function onClickDate(day) {
+        if (!day) return;
+        if (isSunday(day)) return;
+        selectedDate.value = `${currentYear.value}-${String(
+            currentMonth.value
+        ).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        showModal.value = false;
+    }
+
+    // 打開modal設定時段狀態
+    function openSchedule(period) {
+        selectedPeriod.value = period;
+        if (!selectedDate.value) return;
+        // 讀取現有狀態或預設true（可預約）
+        const dateKey = selectedDate.value;
+        const dayStatus = availability[dateKey] || {
             morning: true,
             afternoon: true,
             evening: true,
         };
+        scheduleStatus.value = dayStatus[periodMapToKey(period)];
+        showModal.value = true;
     }
-    availability[dateKey][periodMapToKey(selectedPeriod.value)] =
-        status === "可預約";
-    scheduleStatus.value = status;
-    showModal.value = false;
-}
 
-// 取消modal
-function cancelModal() {
-    showModal.value = false;
-}
-
-// period 字串對應 availability key
-function periodMapToKey(period) {
-    switch (period) {
-        case "上午":
-            return "morning";
-        case "下午":
-            return "afternoon";
-        case "晚上":
-            return "evening";
+    // 確認狀態(可預約或不可預約)
+    function confirmStatus(status) {
+        if (!selectedDate.value) return;
+        const dateKey = selectedDate.value;
+        if (!availability[dateKey]) {
+            availability[dateKey] = {
+                morning: true,
+                afternoon: true,
+                evening: true,
+            };
+        }
+        availability[dateKey][periodMapToKey(selectedPeriod.value)] =
+            status === '可預約';
+        scheduleStatus.value = status;
+        showModal.value = false;
     }
-    return "";
-}
 
-// 讀取某天某時段狀態
-function getPeriodStatus(dateStr, period) {
-    const dayStatus = availability[dateStr];
-    if (!dayStatus) return "可預約";
-    return dayStatus[periodMapToKey(period)] ? "可預約" : "不可預約";
-}
-
-// 切換月份
-function prevMonth() {
-    if (currentMonth.value === 1) {
-        currentYear.value--;
-        currentMonth.value = 12;
-    } else {
-        currentMonth.value--;
+    // 取消modal
+    function cancelModal() {
+        showModal.value = false;
     }
-    selectedDate.value = "";
-    showModal.value = false;
-}
 
-function nextMonth() {
-    if (currentMonth.value === 12) {
-        currentYear.value++;
-        currentMonth.value = 1;
-    } else {
-        currentMonth.value++;
+    // period 字串對應 availability key
+    function periodMapToKey(period) {
+        switch (period) {
+            case '上午':
+                return 'morning';
+            case '下午':
+                return 'afternoon';
+            case '晚上':
+                return 'evening';
+        }
+        return '';
     }
-    selectedDate.value = "";
-    showModal.value = false;
-}
 
-// 公告欄相關功能
-function clearAnnouncement() {
-    newAnnouncement.title = "";
-    newAnnouncement.content = "";
-}
-
-function publishAnnouncement() {
-    if (!newAnnouncement.title.trim() || !newAnnouncement.content.trim()) {
-        alert("請輸入標題與內容");
-        return;
+    // 讀取某天某時段狀態
+    function getPeriodStatus(dateStr, period) {
+        const dayStatus = availability[dateStr];
+        if (!dayStatus) return '可預約';
+        return dayStatus[periodMapToKey(period)] ? '可預約' : '不可預約';
     }
-    announcements.push({
-        title: newAnnouncement.title,
-        content: newAnnouncement.content,
-        date: new Date().toLocaleString(),
-        editable: false,
-    });
-    clearAnnouncement();
-}
 
-function toggleEdit(i) {
-    announcements[i].editable = !announcements[i].editable;
-}
+    // 切換月份
+    function prevMonth() {
+        if (currentMonth.value === 1) {
+            currentYear.value--;
+            currentMonth.value = 12;
+        } else {
+            currentMonth.value--;
+        }
+        selectedDate.value = '';
+        showModal.value = false;
+    }
 
-function deleteAnnouncement(i) {
-    announcements.splice(i, 1);
-}
+    function nextMonth() {
+        if (currentMonth.value === 12) {
+            currentYear.value++;
+            currentMonth.value = 1;
+        } else {
+            currentMonth.value++;
+        }
+        selectedDate.value = '';
+        showModal.value = false;
+    }
 
-// 修改按鈕點擊事件修正(直接呼叫方法)
-function openCalendar() {
-    showCalendar.value = true;
-    showBulletin.value = false;
-}
-function openBulletin() {
-    showBulletin.value = true;
-    showCalendar.value = false;
-}
+    // 公告欄相關功能
+    function clearAnnouncement() {
+        newAnnouncement.title = '';
+        newAnnouncement.content = '';
+    }
+
+    function publishAnnouncement() {
+        if (!newAnnouncement.title.trim() || !newAnnouncement.content.trim()) {
+            alert('請輸入標題與內容');
+            return;
+        }
+        announcements.push({
+            title: newAnnouncement.title,
+            content: newAnnouncement.content,
+            date: new Date().toLocaleString(),
+            editable: false,
+        });
+        clearAnnouncement();
+    }
+
+    function toggleEdit(i) {
+        announcements[i].editable = !announcements[i].editable;
+    }
+
+    function deleteAnnouncement(i) {
+        announcements.splice(i, 1);
+    }
+
+    // 修改按鈕點擊事件修正(直接呼叫方法)
+    function openCalendar() {
+        showCalendar.value = true;
+        showBulletin.value = false;
+    }
+    function openBulletin() {
+        showBulletin.value = true;
+        showCalendar.value = false;
+    }
+    // 串接綠界金流 API
+    async function purchasePremium() {
+        const confirmUpgrade = confirm('確定要升級為藍鑽會員嗎？費用 $199/月');
+        if (!confirmUpgrade) return;
+        try {
+            // 使用 GET 參數打開後端付款頁面
+            const url = new URL('http://127.0.0.1:5000/api/payment/ecpay');
+            url.searchParams.append('teacher_id', userInfo.id);
+            url.searchParams.append('amount', 199);
+            url.searchParams.append('teacher_name', teachers.name);
+            url.searchParams.append('teacher_phone', userInfo.phone || '');
+            url.searchParams.append('description', '藍鑽會員認證');
+            window.open(url.toString(), '_blank');
+        } catch (err) {
+            console.error('金流串接失敗:', err);
+            alert('無法啟動付款流程，請稍後再試');
+        }
+    }
 </script>
 
 <template>
@@ -335,6 +372,10 @@ function openBulletin() {
                     <!-- 按鈕區 -->
                     <div class="grid gap-2 mt-4 w-full">
                         <!-- 其他功能按鈕 -->
+                        <BluePremium
+                            :isPremium="teachers.blue_premium"
+                            @upgrade="purchasePremium"
+                        />
                         <button
                             @click="openCalendar"
                             class="bg-gray-200 hover:bg-gray-300 py-2 rounded-md w-full text-center"
@@ -396,7 +437,7 @@ function openBulletin() {
                                 </p>
                                 <p class="text-left md:w-1/4">
                                     <span class="font-bold">預約時間：</span
-                                    >{{ student.time || "未填寫" }}
+                                    >{{ student.time || '未填寫' }}
                                 </p>
                             </div>
                             <div
@@ -409,8 +450,8 @@ function openBulletin() {
                                 >
                                     {{
                                         showAllStudents
-                                            ? "顯示較少"
-                                            : "查看更多..."
+                                            ? '顯示較少'
+                                            : '查看更多...'
                                     }}
                                 </button>
                             </div>
@@ -577,7 +618,7 @@ function openBulletin() {
                                     >
                                         {{
                                             calendarDays[wIndex * 7 + d - 1] ||
-                                            ""
+                                            ''
                                         }}
                                     </td>
                                 </tr>
@@ -740,7 +781,7 @@ function openBulletin() {
                                         @click="toggleEdit(i)"
                                         class="text-blue-600 hover:underline cursor-pointer"
                                     >
-                                        {{ a.editable ? "完成" : "編輯" }}
+                                        {{ a.editable ? '完成' : '編輯' }}
                                     </button>
                                     <button
                                         @click="deleteAnnouncement(i)"
@@ -769,8 +810,8 @@ function openBulletin() {
 </template>
 
 <style scoped>
-/* 讓不可點的日曆格子無法點擊，cursor 是 not-allowed */
-.cursor-not-allowed {
-    cursor: not-allowed !important;
-}
+    /* 讓不可點的日曆格子無法點擊，cursor 是 not-allowed */
+    .cursor-not-allowed {
+        cursor: not-allowed !important;
+    }
 </style>

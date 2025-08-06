@@ -112,7 +112,7 @@
 
     // 當前用戶和預約資訊
     const currentUser = ref(null);
-    const currentStudentId = ref(null);  // 添加學生ID
+    const currentStudentId = ref(null); // 添加學生ID
     const userBookings = ref([]);
     const loading = ref(false);
     const error = ref('');
@@ -127,18 +127,18 @@
         '09:00am',
         '10:00am',
         '11:00am',
-        '12:00pm',  // 修正：中午12點應該是pm
-        '01:00pm',  // 修正：下午1點
-        '02:00pm',  // 修正：下午2點
-        '03:00pm',  // 修正：下午3點
-        '04:00pm',  // 修正：下午4點
-        '05:00pm',  // 修正：下午5點
-        '06:00pm',  // 修正：下午6點
-        '07:00pm',  // 修正：下午7點
-        '08:00pm',  // 修正：下午8點
-        '09:00pm',  // 修正：下午9點
-        '10:00pm',  // 修正：下午10點
-        '11:00pm',  // 修正：下午11點
+        '12:00pm', // 修正：中午12點應該是pm
+        '01:00pm', // 修正：下午1點
+        '02:00pm', // 修正：下午2點
+        '03:00pm', // 修正：下午3點
+        '04:00pm', // 修正：下午4點
+        '05:00pm', // 修正：下午5點
+        '06:00pm', // 修正：下午6點
+        '07:00pm', // 修正：下午7點
+        '08:00pm', // 修正：下午8點
+        '09:00pm', // 修正：下午9點
+        '10:00pm', // 修正：下午10點
+        '11:00pm', // 修正：下午11點
     ]);
 
     // 月份標籤
@@ -181,7 +181,7 @@
     }
 
     // 假資料：某些 slot 不可預約 / 已上課
-    const disabledSlots = ['12:00pm'];  // 修正時間格式
+    const disabledSlots = ['12:00pm']; // 修正時間格式
     const joinedClassSlots = ['11:00am'];
 
     function isSlotDisabled(slot) {
@@ -239,7 +239,7 @@
                 2: 1,
                 3: 2,
                 4: 3,
-                5: 4
+                5: 4,
             };
             currentStudentId.value = studentIdMap[userId] || 1;
             console.log('✅ 學生ID:', currentStudentId.value);
@@ -267,23 +267,31 @@
     const createBooking = async (courseId, scheduleDate, timeSlot) => {
         try {
             // 將時間格式轉換為24小時制
-            const formattedTime = timeSlot.replace(/(\d{1,2}):(\d{2})(am|pm)/i, (match, hour, minute, period) => {
-                let adjustedHour = parseInt(hour, 10);
-                if (period.toLowerCase() === 'pm' && adjustedHour !== 12) {
-                    adjustedHour += 12;
-                } else if (period.toLowerCase() === 'am' && adjustedHour === 12) {
-                    adjustedHour = 0;
+            const formattedTime = timeSlot.replace(
+                /(\d{1,2}):(\d{2})(am|pm)/i,
+                (match, hour, minute, period) => {
+                    let adjustedHour = parseInt(hour, 10);
+                    if (period.toLowerCase() === 'pm' && adjustedHour !== 12) {
+                        adjustedHour += 12;
+                    } else if (
+                        period.toLowerCase() === 'am' &&
+                        adjustedHour === 12
+                    ) {
+                        adjustedHour = 0;
+                    }
+                    return `${adjustedHour
+                        .toString()
+                        .padStart(2, '0')}:${minute}`;
                 }
-                return `${adjustedHour.toString().padStart(2, '0')}:${minute}`;
-            });
+            );
 
             // 後端期望的格式：YYYY-MM-DD HH:MM
             const scheduleDateTime = `${scheduleDate} ${formattedTime}`;
 
             const bookingData = {
                 course_id: courseId,
-                student_id: currentStudentId.value || 1,  // 使用學生ID而不是用戶ID
-                schedule_date: scheduleDateTime,  // 使用後端期望的格式
+                student_id: currentStudentId.value || 1, // 使用學生ID而不是用戶ID
+                schedule_date: scheduleDateTime, // 使用後端期望的格式
             };
 
             console.log('📤 傳遞的預約數據:', bookingData);
@@ -344,25 +352,25 @@
 </script>
 
 <style scoped>
-/* 日期橫向 scroll 容器樣式 */
-.date-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-}
-
-/* 日期欄樣式 */
-.date-item {
-    flex: 1 1 auto; /* 讓每個日期欄根據空間自動調整寬度 */
-    min-width: 60px;
-    text-align: center;
-    margin: 5px;
-}
-
-/* 針對小屏幕的樣式 */
-@media screen and (max-width: 768px) {
-    .date-item {
-        flex: 1 1 100%; /* 小屏幕時每個日期欄占滿整行 */
+    /* 日期橫向 scroll 容器樣式 */
+    .date-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
     }
-}
+
+    /* 日期欄樣式 */
+    .date-item {
+        flex: 1 1 auto; /* 讓每個日期欄根據空間自動調整寬度 */
+        min-width: 60px;
+        text-align: center;
+        margin: 5px;
+    }
+
+    /* 針對小屏幕的樣式 */
+    @media screen and (max-width: 768px) {
+        .date-item {
+            flex: 1 1 100%; /* 小屏幕時每個日期欄占滿整行 */
+        }
+    }
 </style>
