@@ -1,41 +1,30 @@
 <script setup>
-import { reactive } from "vue";
-import { useRoute } from "vue-router";
-import Navbar from "../components/Navbar.vue";
-import Footer from "../components/Footer.vue";
-import BluePremium from "../components/Blue_Premium.vue";
+    import { reactive } from 'vue';
+    import { useRoute } from 'vue-router';
+    import Navbar from '../components/Navbar.vue';
+    import Footer from '../components/Footer.vue';
 
-// 路由參數
-const route = useRoute();
-const teacherName = route.params.teacherName;
+    // 路由參數
+    const route = useRoute();
+    const teacherName = route.params.teacherName;
 
-// 模擬資料，實際應從 API 抓取
-const teacher = reactive({
-    avatar: "https://via.placeholder.com/150", // 老師照片
-    name: "王小明",
-    email: "teacher@example.com",
-    phone: "0912-345-678",
-    gender: "Male",
-    age: "35",
-    education: "國立台灣大學 教育系 碩士",
-    certifications: "教師資格證書 / TESOL / Google Educator",
-    intro: "熱愛教學，擅長互動式學習，專注於學生的個別發展。",
-    teaching_experience:
-        "10年以上高中與成人英文教學經驗。\n曾任教於多間補習班及國際學校。",
-    status: "在職",
-    blue_premium: false,
-    user_id: 1,
-});
-
-function purchasePremium() {
-    const confirmUpgrade = confirm("確定要升級為藍鑽會員嗎？費用 $199/月");
-
-    if (confirmUpgrade) {
-        // 模擬付費流程，實際上應呼叫後端 API
-        teacher.blue_premium = true;
-        alert("恭喜你已成為藍鑽會員！");
-    }
-}
+    // 模擬資料，實際應從 API 抓取
+    const teacher = reactive({
+        avatar: 'https://via.placeholder.com/150', // 老師照片
+        name: '王小明',
+        email: 'teacher@example.com',
+        phone: '0912-345-678',
+        gender: 'Male',
+        age: '35',
+        education: '國立台灣大學 教育系 碩士',
+        certifications: '教師資格證書 / TESOL / Google Educator',
+        intro: '熱愛教學，擅長互動式學習，專注於學生的個別發展。',
+        teaching_experience:
+            '10年以上高中與成人英文教學經驗。\n曾任教於多間補習班及國際學校。',
+        status: '在職',
+        blue_premium: false,
+        user_id: 1,
+    });
 </script>
 
 <template>
@@ -56,10 +45,6 @@ function purchasePremium() {
                 <div>
                     <h1 class="text-2xl font-bold">{{ teacher.name }}</h1>
                     <p class="text-gray-500">{{ teacher.status }}</p>
-                    <BluePremium
-                        :isPremium="teacher.blue_premium"
-                        @upgrade="purchasePremium"
-                    />
                 </div>
             </div>
 
@@ -108,7 +93,7 @@ function purchasePremium() {
 </template>
 
 <style scoped>
-.teacher-profile {
-    background-color: #f9fafb;
-}
+    .teacher-profile {
+        background-color: #f9fafb;
+    }
 </style>
