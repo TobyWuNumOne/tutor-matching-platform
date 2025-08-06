@@ -2,7 +2,7 @@
 import axios from "axios";
 
 // 設定基本配置
-const API_BASE_URL = "http://fs101.coded2.fun:5000/api";
+const API_BASE_URL = "http://minshen.ddns.net:5000/api";
 
 // 創建 axios 實例
 const api = axios.create({
